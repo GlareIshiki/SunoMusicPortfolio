@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { Search, Grid3x3, List, Sparkles } from 'lucide-react';
+import { Search, Grid3x3, List, Sparkles, Clock } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import {
@@ -13,6 +13,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { SongCard } from '@/components/SongCard';
+import { SongTableRow } from '@/components/SongTableRow';
 import { mockSongs } from '@/lib/mockData';
 
 type ViewMode = 'grid' | 'list';
@@ -224,16 +225,32 @@ export default function Home() {
         </div>
       </section>
       
-      {/* Songs Grid */}
+      {/* Songs Grid / Table */}
       <section className="container">
-        <div className={viewMode === 'grid' 
-          ? 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8'
-          : 'flex flex-col gap-6'
-        }>
-          {filteredSongs.map((song, index) => (
-            <SongCard key={song.id} song={song} index={index} />
-          ))}
-        </div>
+        {viewMode === 'grid' ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+            {filteredSongs.map((song, index) => (
+              <SongCard key={song.id} song={song} index={index} />
+            ))}
+          </div>
+        ) : (
+          <div className="ornate-card elegant-shadow">
+            <div className="ornate-card-inner p-2 md:p-4">
+              {/* Table Header */}
+              <div className="grid grid-cols-[2.5rem_1fr_minmax(0,1fr)_minmax(0,1fr)_3rem] md:grid-cols-[2.5rem_2fr_1fr_1fr_3.5rem] gap-3 items-center px-4 py-2 border-b border-border/50 mb-1">
+                <span className="font-mono text-xs text-muted-foreground text-center">#</span>
+                <span className="font-display text-xs text-muted-foreground tracking-wider">タイトル</span>
+                <span className="font-display text-xs text-muted-foreground tracking-wider hidden md:block">ジャンル</span>
+                <span className="font-display text-xs text-muted-foreground tracking-wider hidden md:block">追加日</span>
+                <Clock className="w-4 h-4 text-muted-foreground ml-auto" />
+              </div>
+              {/* Rows */}
+              {filteredSongs.map((song, index) => (
+                <SongTableRow key={song.id} song={song} index={index} queue={filteredSongs} />
+              ))}
+            </div>
+          </div>
+        )}
         
         {filteredSongs.length === 0 && (
           <motion.div
