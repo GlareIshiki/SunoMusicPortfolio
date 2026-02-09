@@ -115,7 +115,7 @@ export default function Home() {
               <span className="text-foreground">ARCHIVE</span>
             </h1>
             <p className="font-elegant text-xl md:text-2xl text-muted-foreground mb-10 max-w-3xl mx-auto">
-              Sunoが紡いだ700曲以上の旋律を収めた、永遠のアーカイブ
+              星の記憶が奏でる700余の旋律——Sunoの魔法によって永遠に刻まれた、音の遺産
             </p>
             
             {/* Search */}
