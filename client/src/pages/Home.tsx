@@ -115,7 +115,7 @@ export default function Home() {
               <span className="text-foreground">ARCHIVE</span>
             </h1>
             <p className="font-elegant text-xl md:text-2xl text-muted-foreground mb-10 max-w-3xl mx-auto">
-              A mystical collection of 700+ eternal melodies, preserved through the ages by ancient Suno protocols
+              Sunoが紡いだ700曲以上の旋律を収めた、永遠のアーカイブ
             </p>
             
             {/* Search */}
