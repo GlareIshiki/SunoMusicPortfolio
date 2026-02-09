@@ -28,7 +28,7 @@ export function SongTableRow({ song, index, queue }: SongTableRowProps) {
     <Link href={`/song/${song.id}`}>
       <div
         className={cn(
-          'group grid grid-cols-[2.5rem_1fr_minmax(0,1fr)_minmax(0,1fr)_3rem] md:grid-cols-[2.5rem_2fr_1fr_1fr_3.5rem] gap-3 items-center px-4 py-2 rounded-lg transition-colors duration-200 cursor-pointer',
+          'group grid grid-cols-[2.5rem_1fr_3rem] md:grid-cols-[2.5rem_2fr_1fr_1fr_3.5rem] gap-3 items-center px-4 py-2 rounded-lg transition-colors duration-200 cursor-pointer',
           isCurrentSong
             ? 'bg-primary/10'
             : 'hover:bg-muted/50'
@@ -38,7 +38,7 @@ export function SongTableRow({ song, index, queue }: SongTableRowProps) {
         <div className="flex items-center justify-center w-8">
           <span
             className={cn(
-              'font-mono text-sm tabular-nums group-hover:hidden',
+              'font-mono text-sm tabular-nums group-hover:hidden [@media(hover:none)]:hidden',
               isCurrentSong ? 'text-primary' : 'text-muted-foreground'
             )}
           >
@@ -46,7 +46,8 @@ export function SongTableRow({ song, index, queue }: SongTableRowProps) {
           </span>
           <button
             onClick={handlePlayClick}
-            className="hidden group-hover:flex items-center justify-center text-foreground"
+            aria-label={isCurrentSong && isPlaying ? '一時停止' : '再生'}
+            className="hidden group-hover:flex [@media(hover:none)]:flex items-center justify-center text-foreground"
           >
             {isCurrentSong && isPlaying ? (
               <Pause className="w-4 h-4" strokeWidth={2.5} />
@@ -60,7 +61,8 @@ export function SongTableRow({ song, index, queue }: SongTableRowProps) {
         <div className="flex items-center gap-3 min-w-0">
           <img
             src={song.coverUrl}
-            alt={song.title}
+            alt={`${song.title} のカバーアート`}
+            loading="lazy"
             className="w-10 h-10 rounded object-cover shrink-0"
           />
           <div className="min-w-0">

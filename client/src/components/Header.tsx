@@ -55,7 +55,7 @@ export function Header() {
           </Link>
           
           {/* Navigation */}
-          <nav className="flex items-center gap-2">
+          <nav aria-label="メインナビゲーション" className="flex items-center gap-2">
             {navItems.map((item) => {
               const Icon = item.icon;
               const isActive = location === item.href;
@@ -82,6 +82,7 @@ export function Header() {
               variant="ghost"
               size="icon"
               onClick={toggleTheme}
+              aria-label={theme === 'dark' ? 'ライトモードに切替' : 'ダークモードに切替'}
               className="ml-2 rounded-full"
             >
               {theme === 'dark' ? (

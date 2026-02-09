@@ -1,8 +1,8 @@
 /* Design Philosophy: Grand Harmonic Archive - mystical grand library layout */
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Search, Grid3x3, List, Sparkles, Clock } from 'lucide-react';
+import { Search, Grid3x3, List, Sparkles, Clock, ChevronDown } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import {
@@ -13,26 +13,42 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { SongCard } from '@/components/SongCard';
+import { SongCardSkeleton } from '@/components/SongCardSkeleton';
 import { SongTableRow } from '@/components/SongTableRow';
 import { mockSongs } from '@/lib/mockData';
 
 type ViewMode = 'grid' | 'list';
 type SortBy = 'newest' | 'oldest' | 'title' | 'artist' | 'duration';
 
+const SONGS_PER_PAGE = 40;
+
 export default function Home() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedGenre, setSelectedGenre] = useState('all');
   const [sortBy, setSortBy] = useState<SortBy>('newest');
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
-  
+  const [page, setPage] = useState(1);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Reset pagination when filters change
+  useEffect(() => {
+    setPage(1);
+  }, [searchQuery, selectedGenre, sortBy]);
+
+  // Simulate initial loading
+  useEffect(() => {
+    const timer = setTimeout(() => setIsLoading(false), 300);
+    return () => clearTimeout(timer);
+  }, []);
+
   const genres = useMemo(() => {
     const allGenres = mockSongs.map((song) => song.genre);
     return ['all', ...Array.from(new Set(allGenres))];
   }, []);
-  
+
   const filteredSongs = useMemo(() => {
     let filtered = [...mockSongs];
-    
+
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
       filtered = filtered.filter(
@@ -42,11 +58,11 @@ export default function Home() {
           song.tags.some((tag) => tag.toLowerCase().includes(query))
       );
     }
-    
+
     if (selectedGenre !== 'all') {
       filtered = filtered.filter((song) => song.genre === selectedGenre);
     }
-    
+
     filtered.sort((a, b) => {
       switch (sortBy) {
         case 'newest':
@@ -63,10 +79,16 @@ export default function Home() {
           return 0;
       }
     });
-    
+
     return filtered;
   }, [searchQuery, selectedGenre, sortBy]);
-  
+
+  const displayedSongs = useMemo(
+    () => filteredSongs.slice(0, page * SONGS_PER_PAGE),
+    [filteredSongs, page]
+  );
+  const hasMore = displayedSongs.length < filteredSongs.length;
+
   return (
     <div className="min-h-screen pt-24 pb-32">
       {/* Hero Section */}
@@ -80,7 +102,7 @@ export default function Home() {
         />
         <div className="absolute inset-0 bg-gradient-to-b from-background/70 via-background/50 to-background" />
         <div className="absolute inset-0 mystical-particles" />
-        
+
         {/* Content */}
         <div className="relative z-10 container text-center">
           <motion.div
@@ -103,7 +125,7 @@ export default function Home() {
                 <div className="absolute inset-0 gold-glow rounded-full" />
               </motion.div>
             </div>
-            
+
             {/* Title */}
             <div className="mb-3">
               <span className="font-elegant text-lg text-muted-foreground tracking-widest">
@@ -118,7 +140,7 @@ export default function Home() {
             <p className="font-elegant text-xl md:text-2xl text-muted-foreground mb-10 max-w-3xl mx-auto">
               星の記憶が奏でる700余の旋律——Sunoの魔法によって永遠に刻まれた、音の遺産
             </p>
-            
+
             {/* Search */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -135,6 +157,7 @@ export default function Home() {
                     <Input
                       type="text"
                       placeholder="曲名、アーティスト、タグで検索..."
+                      aria-label="楽曲を検索"
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
                       className="pl-12 h-12 bg-background border-0 font-elegant"
@@ -146,7 +169,7 @@ export default function Home() {
           </motion.div>
         </div>
       </section>
-      
+
       {/* Filters and Controls */}
       <section className="container mb-10">
         <div className="ornate-card elegant-shadow">
@@ -171,7 +194,7 @@ export default function Home() {
                     </SelectContent>
                   </Select>
                 </div>
-                
+
                 {/* Sort */}
                 <div className="flex items-center gap-3">
                   <span className="font-display text-sm text-muted-foreground whitespace-nowrap">
@@ -191,7 +214,7 @@ export default function Home() {
                   </Select>
                 </div>
               </div>
-              
+
               {/* View Mode and Count */}
               <div className="flex items-center gap-4">
                 <div className="flex items-center gap-2">
@@ -200,12 +223,13 @@ export default function Home() {
                     {filteredSongs.length} melodies
                   </span>
                 </div>
-                
+
                 <div className="flex items-center gap-1">
                   <Button
                     variant={viewMode === 'grid' ? 'default' : 'ghost'}
                     size="icon"
                     onClick={() => setViewMode('grid')}
+                    aria-label="グリッド表示"
                     className="rounded-lg"
                   >
                     <Grid3x3 className="w-4 h-4" strokeWidth={2} />
@@ -214,6 +238,7 @@ export default function Home() {
                     variant={viewMode === 'list' ? 'default' : 'ghost'}
                     size="icon"
                     onClick={() => setViewMode('list')}
+                    aria-label="リスト表示"
                     className="rounded-lg"
                   >
                     <List className="w-4 h-4" strokeWidth={2} />
@@ -224,12 +249,18 @@ export default function Home() {
           </div>
         </div>
       </section>
-      
+
       {/* Songs Grid / Table */}
       <section className="container">
-        {viewMode === 'grid' ? (
+        {isLoading ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
-            {filteredSongs.map((song, index) => (
+            {Array.from({ length: 8 }).map((_, i) => (
+              <SongCardSkeleton key={i} />
+            ))}
+          </div>
+        ) : viewMode === 'grid' ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+            {displayedSongs.map((song, index) => (
               <SongCard key={song.id} song={song} index={index} />
             ))}
           </div>
@@ -237,22 +268,37 @@ export default function Home() {
           <div className="ornate-card elegant-shadow">
             <div className="ornate-card-inner p-2 md:p-4">
               {/* Table Header */}
-              <div className="grid grid-cols-[2.5rem_1fr_minmax(0,1fr)_minmax(0,1fr)_3rem] md:grid-cols-[2.5rem_2fr_1fr_1fr_3.5rem] gap-3 items-center px-4 py-2 border-b border-border/50 mb-1">
-                <span className="font-mono text-xs text-muted-foreground text-center">#</span>
-                <span className="font-display text-xs text-muted-foreground tracking-wider">タイトル</span>
-                <span className="font-display text-xs text-muted-foreground tracking-wider hidden md:block">ジャンル</span>
-                <span className="font-display text-xs text-muted-foreground tracking-wider hidden md:block">追加日</span>
-                <Clock className="w-4 h-4 text-muted-foreground ml-auto" />
+              <div className="grid grid-cols-[2.5rem_1fr_3rem] md:grid-cols-[2.5rem_2fr_1fr_1fr_3.5rem] gap-3 items-center px-4 py-2 border-b border-border/50 mb-1" role="row">
+                <span role="columnheader" className="font-mono text-xs text-muted-foreground text-center">#</span>
+                <span role="columnheader" className="font-display text-xs text-muted-foreground tracking-wider">タイトル</span>
+                <span role="columnheader" className="font-display text-xs text-muted-foreground tracking-wider hidden md:block">ジャンル</span>
+                <span role="columnheader" className="font-display text-xs text-muted-foreground tracking-wider hidden md:block">追加日</span>
+                <Clock className="w-4 h-4 text-muted-foreground ml-auto" aria-label="再生時間" />
               </div>
               {/* Rows */}
-              {filteredSongs.map((song, index) => (
+              {displayedSongs.map((song, index) => (
                 <SongTableRow key={song.id} song={song} index={index} queue={filteredSongs} />
               ))}
             </div>
           </div>
         )}
-        
-        {filteredSongs.length === 0 && (
+
+        {/* Load More */}
+        {!isLoading && hasMore && (
+          <div className="flex justify-center mt-12">
+            <Button
+              variant="outline"
+              size="lg"
+              onClick={() => setPage(p => p + 1)}
+              className="gap-2 font-elegant text-base border-primary/30 hover:bg-primary/10 hover:text-primary"
+            >
+              <ChevronDown className="w-5 h-5" />
+              もっと見る ({displayedSongs.length} / {filteredSongs.length})
+            </Button>
+          </div>
+        )}
+
+        {!isLoading && filteredSongs.length === 0 && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}

@@ -1,5 +1,3 @@
-/* Design Philosophy: Aurora Dreamscape - smooth, flowing state management */
-
 import React, { createContext, useContext, useState, useRef, useEffect, useCallback } from 'react';
 import type { Song, RepeatMode } from '@/../../shared/types';
 
@@ -13,7 +11,8 @@ interface PlayerContextType {
   currentIndex: number;
   repeatMode: RepeatMode;
   isShuffle: boolean;
-  
+  isMuted: boolean;
+
   playSong: (song: Song, queue?: Song[]) => void;
   togglePlay: () => void;
   playNext: () => void;
@@ -22,6 +21,7 @@ interface PlayerContextType {
   setVolume: (volume: number) => void;
   toggleRepeat: () => void;
   toggleShuffle: () => void;
+  toggleMute: () => void;
   addToQueue: (song: Song) => void;
 }
 
@@ -37,88 +37,91 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [repeatMode, setRepeatMode] = useState<RepeatMode>('off');
   const [isShuffle, setIsShuffle] = useState(false);
-  
+  const [isMuted, setIsMuted] = useState(false);
+
   const audioRef = useRef<HTMLAudioElement | null>(null);
-  
+
   useEffect(() => {
     if (!audioRef.current) {
       audioRef.current = new Audio();
       audioRef.current.volume = volume;
-      
-      audioRef.current.addEventListener('timeupdate', () => {
-        setCurrentTime(audioRef.current?.currentTime || 0);
-      });
-      
-      audioRef.current.addEventListener('loadedmetadata', () => {
-        setDuration(audioRef.current?.duration || 0);
-      });
-      
-      audioRef.current.addEventListener('ended', () => {
-        handleSongEnd();
-      });
     }
-    
+
+    const audio = audioRef.current;
+
+    const onTimeUpdate = () => setCurrentTime(audio.currentTime);
+    const onLoadedMetadata = () => setDuration(audio.duration);
+    const onEnded = () => handleSongEnd();
+
+    audio.addEventListener('timeupdate', onTimeUpdate);
+    audio.addEventListener('loadedmetadata', onLoadedMetadata);
+    audio.addEventListener('ended', onEnded);
+
     return () => {
-      if (audioRef.current) {
-        audioRef.current.pause();
-        audioRef.current.src = '';
-      }
+      audio.removeEventListener('timeupdate', onTimeUpdate);
+      audio.removeEventListener('loadedmetadata', onLoadedMetadata);
+      audio.removeEventListener('ended', onEnded);
+      audio.pause();
+      audio.src = '';
     };
   }, []);
-  
+
   const handleSongEnd = useCallback(() => {
     if (repeatMode === 'one') {
-      audioRef.current?.play();
+      if (audioRef.current) {
+        audioRef.current.currentTime = 0;
+        audioRef.current.play();
+      }
     } else if (repeatMode === 'all' || currentIndex < queue.length - 1) {
       playNext();
     } else {
       setIsPlaying(false);
     }
   }, [repeatMode, currentIndex, queue.length]);
-  
+
   const playSong = useCallback((song: Song, newQueue?: Song[]) => {
     if (newQueue) {
       setQueue(newQueue);
       const index = newQueue.findIndex(s => s.id === song.id);
       setCurrentIndex(index >= 0 ? index : 0);
     }
-    
+
     setCurrentSong(song);
     if (audioRef.current) {
       audioRef.current.src = song.audioUrl;
-      audioRef.current.play();
+      audioRef.current.play().catch(console.error);
       setIsPlaying(true);
     }
   }, []);
-  
+
   const togglePlay = useCallback(() => {
     if (!audioRef.current || !currentSong) return;
-    
+
     if (isPlaying) {
       audioRef.current.pause();
     } else {
-      audioRef.current.play();
+      audioRef.current.play().catch(console.error);
     }
     setIsPlaying(!isPlaying);
   }, [isPlaying, currentSong]);
-  
+
   const playNext = useCallback(() => {
     if (queue.length === 0) return;
-    
+
     let nextIndex: number;
     if (isShuffle) {
       nextIndex = Math.floor(Math.random() * queue.length);
     } else {
       nextIndex = (currentIndex + 1) % queue.length;
     }
-    
+
     setCurrentIndex(nextIndex);
     playSong(queue[nextIndex]);
   }, [queue, currentIndex, isShuffle, playSong]);
-  
+
   const playPrevious = useCallback(() => {
     if (queue.length === 0) return;
-    
+
     if (currentTime > 3) {
       seek(0);
     } else {
@@ -127,22 +130,22 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
       playSong(queue[prevIndex]);
     }
   }, [queue, currentIndex, currentTime, playSong]);
-  
+
   const seek = useCallback((time: number) => {
     if (audioRef.current) {
       audioRef.current.currentTime = time;
       setCurrentTime(time);
     }
   }, []);
-  
+
   const setVolume = useCallback((newVolume: number) => {
-    const clampedVolume = Math.max(0, Math.min(1, newVolume));
-    setVolumeState(clampedVolume);
+    const clamped = Math.max(0, Math.min(1, newVolume));
+    setVolumeState(clamped);
     if (audioRef.current) {
-      audioRef.current.volume = clampedVolume;
+      audioRef.current.volume = isMuted ? 0 : clamped;
     }
-  }, []);
-  
+  }, [isMuted]);
+
   const toggleRepeat = useCallback(() => {
     setRepeatMode(current => {
       if (current === 'off') return 'all';
@@ -150,15 +153,25 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
       return 'off';
     });
   }, []);
-  
+
   const toggleShuffle = useCallback(() => {
     setIsShuffle(current => !current);
   }, []);
-  
+
+  const toggleMute = useCallback(() => {
+    setIsMuted(prev => {
+      const next = !prev;
+      if (audioRef.current) {
+        audioRef.current.volume = next ? 0 : volume;
+      }
+      return next;
+    });
+  }, [volume]);
+
   const addToQueue = useCallback((song: Song) => {
     setQueue(current => [...current, song]);
   }, []);
-  
+
   return (
     <PlayerContext.Provider
       value={{
@@ -171,6 +184,7 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
         currentIndex,
         repeatMode,
         isShuffle,
+        isMuted,
         playSong,
         togglePlay,
         playNext,
@@ -179,6 +193,7 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
         setVolume,
         toggleRepeat,
         toggleShuffle,
+        toggleMute,
         addToQueue,
       }}
     >
