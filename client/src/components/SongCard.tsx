@@ -16,9 +16,10 @@ interface SongCardProps {
   song: Song;
   index: number;
   onVisibilityChange?: () => void;
+  onSongUpdate?: (songId: string, updates: Partial<Song>) => void;
 }
 
-export function SongCard({ song, index, onVisibilityChange }: SongCardProps) {
+export function SongCard({ song, index, onVisibilityChange, onSongUpdate }: SongCardProps) {
   const { currentSong, isPlaying, playSong, togglePlay } = usePlayer();
   const { isAdmin } = useAdmin();
   const isCurrentSong = currentSong?.id === song.id;
@@ -37,10 +38,12 @@ export function SongCard({ song, index, onVisibilityChange }: SongCardProps) {
   const handleToggleVisibility = async (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
+    const newVisible = !song.visible;
     try {
-      await updateSong(song.id, { visible: !song.visible });
-      toast.success(song.visible ? 'Song hidden' : 'Song visible');
-      onVisibilityChange?.();
+      await updateSong(song.id, { visible: newVisible });
+      toast.success(newVisible ? 'Song visible' : 'Song hidden');
+      if (onSongUpdate) onSongUpdate(song.id, { visible: newVisible });
+      else onVisibilityChange?.();
     } catch {
       toast.error('Failed to update visibility');
     }
@@ -49,10 +52,12 @@ export function SongCard({ song, index, onVisibilityChange }: SongCardProps) {
   const handleTogglePin = async (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
+    const newPinned = !song.pinned;
     try {
-      await updateSong(song.id, { pinned: !song.pinned });
-      toast.success(song.pinned ? 'Unpinned' : 'Pinned');
-      onVisibilityChange?.();
+      await updateSong(song.id, { pinned: newPinned });
+      toast.success(newPinned ? 'Pinned' : 'Unpinned');
+      if (onSongUpdate) onSongUpdate(song.id, { pinned: newPinned });
+      else onVisibilityChange?.();
     } catch {
       toast.error('Failed to update pin');
     }

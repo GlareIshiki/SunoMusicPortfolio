@@ -11,6 +11,7 @@ interface UseSongsResult {
   isLoading: boolean;
   error: string | null;
   refetch: () => void;
+  patchSong: (songId: string, updates: Partial<Song>) => void;
 }
 
 export function useSongs(params: FetchSongsParams = {}): UseSongsResult {
@@ -38,7 +39,14 @@ export function useSongs(params: FetchSongsParams = {}): UseSongsResult {
     refetch();
   }, [refetch]);
 
-  return { ...data, isLoading, error, refetch };
+  const patchSong = useCallback((songId: string, updates: Partial<Song>) => {
+    setData(prev => ({
+      ...prev,
+      songs: prev.songs.map(s => s.id === songId ? { ...s, ...updates } : s),
+    }));
+  }, []);
+
+  return { ...data, isLoading, error, refetch, patchSong };
 }
 
 interface UseSongResult {

@@ -36,7 +36,7 @@ export default function Home() {
 
   const debouncedSearch = useDebounce(searchQuery, 300);
 
-  const { songs, total, totalPages, isLoading, refetch } = useSongs({
+  const { songs, total, totalPages, isLoading, patchSong } = useSongs({
     page,
     limit: SONGS_PER_PAGE,
     search: debouncedSearch,
@@ -266,7 +266,7 @@ export default function Home() {
         ) : viewMode === 'grid' ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
             {songs.map((song, index) => (
-              <SongCard key={song.id} song={song} index={index} onVisibilityChange={refetch} />
+              <SongCard key={song.id} song={song} index={index} onSongUpdate={patchSong} />
             ))}
           </div>
         ) : (
@@ -282,7 +282,7 @@ export default function Home() {
               </div>
               {/* Rows */}
               {songs.map((song, index) => (
-                <SongTableRow key={song.id} song={song} index={(safePage - 1) * SONGS_PER_PAGE + index} queue={songs} onVisibilityChange={refetch} />
+                <SongTableRow key={song.id} song={song} index={(safePage - 1) * SONGS_PER_PAGE + index} queue={songs} onSongUpdate={patchSong} />
               ))}
             </div>
           </div>
