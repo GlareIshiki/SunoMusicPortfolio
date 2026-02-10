@@ -63,8 +63,8 @@ export async function fetchGenres(): Promise<string[]> {
   return data.genres;
 }
 
-export async function fetchSongById(id: string): Promise<Song | null> {
-  const res = await fetch(`${API_BASE}/api/songs/${id}`, { headers: authHeaders() });
+export async function fetchSongById(id: string, signal?: AbortSignal): Promise<Song | null> {
+  const res = await fetch(`${API_BASE}/api/songs/${id}`, { headers: authHeaders(), signal });
   if (res.status === 404) return null;
   if (!res.ok) throw new Error('Failed to fetch song');
   return res.json();

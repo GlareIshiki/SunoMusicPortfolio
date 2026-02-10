@@ -11,7 +11,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   if (req.method === 'GET') {
     const { data, error } = await supabase.from('songs').select('*').eq('id', id).single();
-    if (error || !data) return res.status(404).json({ error: 'Song not found' });
+    if (error) {
+      // PGRST116 = "The result contains 0 rows" = actual not found
+      if (error.code === 'PGRST116') {
+        return res.status(404).json({ error: 'Song not found' });
+      }
+      console.error('Supabase error fetching song:', error);
+      return res.status(500).json({ error: 'Database error' });
+    }
+    if (!data) return res.status(404).json({ error: 'Song not found' });
 
     const admin = await isAdmin(req);
     if (!data.visible && !admin) {

@@ -52,24 +52,61 @@ export function useSong(id: string | undefined): UseSongResult {
   const [song, setSong] = useState<Song | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [fetchKey, setFetchKey] = useState(0);
 
-  const refetch = useCallback(() => {
+  useEffect(() => {
     if (!id) {
       setSong(null);
       setIsLoading(false);
       return;
     }
+
+    const controller = new AbortController();
+    let cancelled = false;
     setIsLoading(true);
     setError(null);
-    fetchSongById(id)
-      .then(setSong)
-      .catch(e => setError(e.message))
-      .finally(() => setIsLoading(false));
-  }, [id]);
 
-  useEffect(() => {
-    refetch();
-  }, [refetch]);
+    async function load() {
+      const MAX_RETRIES = 2;
+      for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+        if (cancelled) return;
+        try {
+          const data = await fetchSongById(id!, controller.signal);
+          if (cancelled) return;
+          // If null (404) on first attempts, retry after short delay
+          // (transient Vercel cold-start errors can masquerade as 404)
+          if (!data && attempt < MAX_RETRIES) {
+            await new Promise(r => setTimeout(r, 500));
+            continue;
+          }
+          setSong(data);
+          setIsLoading(false);
+          return;
+        } catch (e: unknown) {
+          if (cancelled) return;
+          if (e instanceof Error && e.name === 'AbortError') return;
+          if (attempt < MAX_RETRIES) {
+            await new Promise(r => setTimeout(r, 500));
+            continue;
+          }
+          setError(e instanceof Error ? e.message : 'Unknown error');
+          setIsLoading(false);
+          return;
+        }
+      }
+    }
+
+    load();
+
+    return () => {
+      cancelled = true;
+      controller.abort();
+    };
+  }, [id, fetchKey]);
+
+  const refetch = useCallback(() => {
+    setFetchKey(k => k + 1);
+  }, []);
 
   return { song, isLoading, error, refetch };
 }
