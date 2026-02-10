@@ -41,94 +41,104 @@ export function SongTableRow({ song, index, queue, onVisibilityChange }: SongTab
     }
   };
 
-  return (
-    <Link href={`/song/${song.id}`}>
-      <div
-        className={cn(
-          'group grid gap-3 items-center px-4 py-2 rounded-lg transition-colors duration-200 cursor-pointer',
-          isAdmin
-            ? 'grid-cols-[2rem_2.5rem_1fr_3rem] md:grid-cols-[2rem_2.5rem_2fr_1fr_1fr_3.5rem]'
-            : 'grid-cols-[2.5rem_1fr_3rem] md:grid-cols-[2.5rem_2fr_1fr_1fr_3.5rem]',
-          isCurrentSong
-            ? 'bg-primary/10'
-            : 'hover:bg-muted/50',
-          isAdmin && !song.visible && 'opacity-50'
-        )}
-      >
-        {/* Admin visibility toggle */}
-        {isAdmin && (
-          <button
-            onClick={handleToggleVisibility}
-            className="flex items-center justify-center w-6 h-6 rounded-full hover:bg-muted transition-colors"
-          >
-            {song.visible ? (
-              <Eye className="w-3.5 h-3.5 text-primary" />
-            ) : (
-              <EyeOff className="w-3.5 h-3.5 text-muted-foreground" />
-            )}
-          </button>
-        )}
-        {/* # / Play button */}
-        <div className="flex items-center justify-center w-8">
-          <span
-            className={cn(
-              'font-mono text-sm tabular-nums group-hover:hidden [@media(hover:none)]:hidden',
-              isCurrentSong ? 'text-primary' : 'text-muted-foreground'
-            )}
-          >
-            {index + 1}
-          </span>
-          <button
-            onClick={handlePlayClick}
-            aria-label={isCurrentSong && isPlaying ? '一時停止' : '再生'}
-            className="hidden group-hover:flex [@media(hover:none)]:flex items-center justify-center text-foreground"
-          >
-            {isCurrentSong && isPlaying ? (
-              <Pause className="w-4 h-4" strokeWidth={2.5} />
-            ) : (
-              <Play className="w-4 h-4 ml-0.5" strokeWidth={2.5} />
-            )}
-          </button>
-        </div>
+  const handleRowClick = () => {
+    if (isCurrentSong) {
+      togglePlay();
+    } else {
+      playSong(song, queue);
+    }
+  };
 
-        {/* Cover + Title + Artist */}
-        <div className="flex items-center gap-3 min-w-0">
-          <img
-            src={song.coverUrl}
-            alt={`${song.title} のカバーアート`}
-            loading="lazy"
-            className="w-10 h-10 rounded object-cover shrink-0"
-          />
-          <div className="min-w-0">
+  return (
+    <div
+      onClick={handleRowClick}
+      className={cn(
+        'group grid gap-3 items-center px-4 py-2 rounded-lg transition-colors duration-200 cursor-pointer',
+        isAdmin
+          ? 'grid-cols-[2rem_2.5rem_1fr_3rem] md:grid-cols-[2rem_2.5rem_2fr_1fr_1fr_3.5rem]'
+          : 'grid-cols-[2.5rem_1fr_3rem] md:grid-cols-[2.5rem_2fr_1fr_1fr_3.5rem]',
+        isCurrentSong
+          ? 'bg-primary/10'
+          : 'hover:bg-muted/50',
+        isAdmin && !song.visible && 'opacity-50'
+      )}
+    >
+      {/* Admin visibility toggle */}
+      {isAdmin && (
+        <button
+          onClick={handleToggleVisibility}
+          className="flex items-center justify-center w-6 h-6 rounded-full hover:bg-muted transition-colors"
+        >
+          {song.visible ? (
+            <Eye className="w-3.5 h-3.5 text-primary" />
+          ) : (
+            <EyeOff className="w-3.5 h-3.5 text-muted-foreground" />
+          )}
+        </button>
+      )}
+      {/* # / Play button */}
+      <div className="flex items-center justify-center w-8">
+        <span
+          className={cn(
+            'font-mono text-sm tabular-nums group-hover:hidden [@media(hover:none)]:hidden',
+            isCurrentSong ? 'text-primary' : 'text-muted-foreground'
+          )}
+        >
+          {index + 1}
+        </span>
+        <button
+          onClick={handlePlayClick}
+          aria-label={isCurrentSong && isPlaying ? '一時停止' : '再生'}
+          className="hidden group-hover:flex [@media(hover:none)]:flex items-center justify-center text-foreground"
+        >
+          {isCurrentSong && isPlaying ? (
+            <Pause className="w-4 h-4" strokeWidth={2.5} />
+          ) : (
+            <Play className="w-4 h-4 ml-0.5" strokeWidth={2.5} />
+          )}
+        </button>
+      </div>
+
+      {/* Cover + Title + Artist */}
+      <div className="flex items-center gap-3 min-w-0">
+        <img
+          src={song.coverUrl}
+          alt={`${song.title} のカバーアート`}
+          loading="lazy"
+          className="w-10 h-10 rounded object-cover shrink-0"
+        />
+        <div className="min-w-0">
+          <Link href={`/song/${song.id}`}>
             <p
+              onClick={(e) => e.stopPropagation()}
               className={cn(
-                'font-display text-sm truncate',
-                isCurrentSong ? 'text-primary' : 'text-foreground'
+                'font-display text-sm truncate hover:underline',
+                isCurrentSong ? 'text-primary' : 'text-foreground hover:text-primary'
               )}
             >
               {song.title}
             </p>
-            <p className="font-elegant text-sm text-muted-foreground truncate">
-              {song.artist}
-            </p>
-          </div>
+          </Link>
+          <p className="font-elegant text-sm text-muted-foreground truncate">
+            {song.artist}
+          </p>
         </div>
-
-        {/* Genre */}
-        <span className="font-elegant text-sm text-muted-foreground truncate hidden md:block">
-          {song.genre}
-        </span>
-
-        {/* Date */}
-        <span className="font-mono text-sm text-muted-foreground truncate hidden md:block">
-          {formatDate(song.createdAt)}
-        </span>
-
-        {/* Duration */}
-        <span className="font-mono text-sm text-muted-foreground text-right">
-          {formatDuration(song.duration)}
-        </span>
       </div>
-    </Link>
+
+      {/* Genre */}
+      <span className="font-elegant text-sm text-muted-foreground truncate hidden md:block">
+        {song.genre}
+      </span>
+
+      {/* Date */}
+      <span className="font-mono text-sm text-muted-foreground truncate hidden md:block">
+        {formatDate(song.createdAt)}
+      </span>
+
+      {/* Duration */}
+      <span className="font-mono text-sm text-muted-foreground text-right">
+        {formatDuration(song.duration)}
+      </span>
+    </div>
   );
 }
