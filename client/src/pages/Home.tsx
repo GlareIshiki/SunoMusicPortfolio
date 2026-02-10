@@ -104,7 +104,7 @@ export default function Home() {
                 transition={{ duration: 60, repeat: Infinity, ease: "linear" }}
               >
                 <img
-                  src="https://private-us-east-1.manuscdn.com/sessionFile/s1rF6OwbRH7CMoYsrPbBKV/sandbox/sRwgALMr55TD0qa4vI4D5e_1770654684992_na1fn_ZmdvLW11c2ljLWVtYmxlbQ.png?x-oss-process=image/resize,w_1920,h_1920/format,webp/quality,q_80&Expires=1798761600&Policy=eyJTdGF0ZW1lbnQiOlt7IlJlc291cmNlIjoiaHR0cHM6Ly9wcml2YXRlLXVzLWVhc3QtMS5tYW51c2Nkbi5jb20vc2Vzc2lvbkZpbGUvczFyRjZPd2JSSDdDTW9Zc3JQYkJLVi9zYW5kYm94L3NSd2dBTE1yNTVURDBxYTR2STRENWVfMTc3MDY1NDY4NDk5Ml9uYTFmbl9abWR2TFcxMWMybGpMV1Z0WW14bGJRLnBuZz94LW9zcy1wcm9jZXNzPWltYWdlL3Jlc2l6ZSx3XzE5MjAsaF8xOTIwL2Zvcm1hdCx3ZWJwL3F1YWxpdHkscV84MCIsIkNvbmRpdGlvbiI6eyJEYXRlTGVzc1RoYW4iOnsiQVdTOkVwb2NoVGltZSI6MTc5ODc2MTYwMH19fV19&Key-Pair-Id=K2HSFNDJXOU9YS&Signature=AGG-0kjuXdWdACszwnqyUImeGgZaokZKOAR78u2VQKCQDSrQ5O4pzCBChIULgEYIduVNvXjBu1EjOOc~DO~AO5dx-jD03G2v2u97Uv7qX98eqYqF2xxKEZHenKLrUzGUZMKf38eAxacllmp1dE4sJtTlzPVhk3S-V5VLNyg-6I-xWSPvUOhlap3goOV7ldCfOlwgf8Acmg3fv9LcTdriRxX2FG8ZGnleNXsjCTnpVxqYg6993zJzShz98ShXRC~VpiClgw8dKGoWHVeebqlPZSiGT9xPvP4pQ1eLnm8bfileIkqzWUoaxH62ONC2xVvYUkbReiJA7TezdFhuUfuusjw__"
+                  src="/emblem.png"
                   alt="Emblem"
                   className="w-32 h-32 drop-shadow-2xl"
                 />
