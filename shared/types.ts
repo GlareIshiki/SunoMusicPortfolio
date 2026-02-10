@@ -17,8 +17,10 @@ export interface Song {
   pinned: boolean;
 }
 
+export type TextAlign = 'left' | 'right' | 'center' | 'full';
+
 export type CharacterSection =
-  | { type: 'text'; content: string }
+  | { type: 'text'; content: string; align?: TextAlign }
   | { type: 'songs'; songIds: string[] };
 
 export interface Character {

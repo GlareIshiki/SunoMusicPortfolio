@@ -11,7 +11,7 @@ import { useAdmin } from '@/contexts/AdminContext';
 import { useCharacter } from '@/hooks/useCharacters';
 import { fetchSongsByIds } from '@/lib/api';
 import { CharacterEditSheet } from '@/components/CharacterEditSheet';
-import type { Song, CharacterSection } from '@/../../shared/types';
+import type { Song, CharacterSection, TextAlign } from '@/../../shared/types';
 
 export default function CharacterDetail() {
   const [, params] = useRoute('/character/:id');
@@ -193,45 +193,88 @@ export default function CharacterDetail() {
 
       {/* Sections: alternating text and songs */}
       <section className="container">
-        <div className="max-w-4xl mx-auto space-y-12">
-          {character.sections.map((section, index) => (
-            <motion.div
-              key={index}
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, delay: index * 0.1 }}
-            >
-              {section.type === 'text' ? (
-                <div className="ornate-card elegant-shadow">
-                  <div className="ornate-card-inner">
-                    <p className="font-elegant text-lg leading-relaxed text-muted-foreground whitespace-pre-wrap">
-                      {section.content}
-                    </p>
+        <div className="max-w-5xl mx-auto space-y-16">
+          {character.sections.map((section, index) => {
+            const align = section.type === 'text' ? (section.align || 'center') : 'center';
+
+            // Animation direction based on alignment
+            const motionProps = {
+              initial: {
+                opacity: 0,
+                x: align === 'left' ? -40 : align === 'right' ? 40 : 0,
+                y: align === 'center' || align === 'full' ? 30 : 0,
+              },
+              animate: { opacity: 1, x: 0, y: 0 },
+              transition: { duration: 0.8, delay: index * 0.08, ease: [0.25, 0.46, 0.45, 0.94] as const },
+            };
+
+            // Text section alignment classes
+            const alignClasses: Record<TextAlign, string> = {
+              left: 'md:w-[65%] md:mr-auto',
+              right: 'md:w-[65%] md:ml-auto',
+              center: 'md:w-[80%] mx-auto',
+              full: 'w-full',
+            };
+
+            return (
+              <div key={index}>
+                {/* Decorative separator between sections */}
+                {index > 0 && (
+                  <div className="flex items-center justify-center gap-4 mb-16">
+                    <div className="h-px flex-1 bg-gradient-to-r from-transparent via-primary/30 to-transparent" />
+                    <div className="w-2 h-2 rotate-45 border border-primary/40" />
+                    <div className="w-1.5 h-1.5 rotate-45 bg-primary/30" />
+                    <div className="w-2 h-2 rotate-45 border border-primary/40" />
+                    <div className="h-px flex-1 bg-gradient-to-r from-transparent via-primary/30 to-transparent" />
                   </div>
-                </div>
-              ) : (
-                <div>
-                  <div className="flex items-center gap-3 mb-6">
-                    <Music2 className="w-5 h-5 text-primary" />
-                    <h3 className="font-display text-lg gradient-text">Associated Melodies</h3>
-                  </div>
-                  {songsLoading ? (
-                    <div className="text-center py-8">
-                      <Sparkles className="w-8 h-8 text-primary mx-auto animate-pulse" />
+                )}
+
+                <motion.div {...motionProps}>
+                  {section.type === 'text' ? (
+                    <div className={alignClasses[align]}>
+                      {/* Decorative quote accent for left/right aligned */}
+                      {(align === 'left' || align === 'right') && (
+                        <div className={`mb-3 ${align === 'right' ? 'text-right' : ''}`}>
+                          <span className="font-display text-4xl text-primary/20 leading-none select-none">
+                            {align === 'left' ? '\u201C' : '\u201D'}
+                          </span>
+                        </div>
+                      )}
+                      <div className={`ornate-card elegant-shadow ${align === 'right' ? 'border-r-2 border-r-primary/30' : align === 'left' ? 'border-l-2 border-l-primary/30' : ''}`}>
+                        <div className="ornate-card-inner">
+                          <p className={`font-elegant text-lg leading-relaxed text-muted-foreground whitespace-pre-wrap ${align === 'right' ? 'text-right' : align === 'center' ? 'text-center' : ''}`}>
+                            {section.content}
+                          </p>
+                        </div>
+                      </div>
                     </div>
                   ) : (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                      {section.songIds.map((songId, si) => {
-                        const song = songsMap.get(songId);
-                        if (!song) return null;
-                        return <SongCard key={songId} song={song} index={si} />;
-                      })}
+                    <div>
+                      <div className="flex items-center gap-3 mb-8">
+                        <div className="h-px flex-1 bg-gradient-to-r from-primary/30 to-transparent" />
+                        <Music2 className="w-5 h-5 text-primary" />
+                        <h3 className="font-display text-lg gradient-text tracking-wider">Associated Melodies</h3>
+                        <div className="h-px flex-1 bg-gradient-to-l from-primary/30 to-transparent" />
+                      </div>
+                      {songsLoading ? (
+                        <div className="text-center py-8">
+                          <Sparkles className="w-8 h-8 text-primary mx-auto animate-pulse" />
+                        </div>
+                      ) : (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                          {section.songIds.map((songId, si) => {
+                            const song = songsMap.get(songId);
+                            if (!song) return null;
+                            return <SongCard key={songId} song={song} index={si} />;
+                          })}
+                        </div>
+                      )}
                     </div>
                   )}
-                </div>
-              )}
-            </motion.div>
-          ))}
+                </motion.div>
+              </div>
+            );
+          })}
 
           {character.sections.length === 0 && (
             <div className="text-center py-16">

@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Save, Upload, Link2, X, Plus, Loader2, Eye, EyeOff, ChevronUp, ChevronDown, Type, Music2, Search, Trash2 } from 'lucide-react';
+import { Save, Upload, Link2, X, Plus, Loader2, Eye, EyeOff, ChevronUp, ChevronDown, Type, Music2, Search, Trash2, AlignLeft, AlignCenter, AlignRight, AlignJustify } from 'lucide-react';
 import {
   Sheet,
   SheetContent,
@@ -17,7 +17,7 @@ import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { updateCharacter, uploadCover, fetchSongs } from '@/lib/api';
 import { toast } from 'sonner';
-import type { Character, CharacterSection, Song } from '@/../../shared/types';
+import type { Character, CharacterSection, Song, TextAlign } from '@/../../shared/types';
 
 interface CharacterEditSheetProps {
   character: Character;
@@ -119,7 +119,7 @@ export function CharacterEditSheet({ character, open, onOpenChange, onSaved }: C
       ...f,
       sections: [
         ...f.sections,
-        type === 'text' ? { type: 'text', content: '' } : { type: 'songs', songIds: [] },
+        type === 'text' ? { type: 'text', content: '', align: 'center' as TextAlign } : { type: 'songs', songIds: [] },
       ],
     }));
   };
@@ -144,7 +144,19 @@ export function CharacterEditSheet({ character, open, onOpenChange, onSaved }: C
   const updateTextContent = (index: number, content: string) => {
     setForm(f => {
       const arr = [...f.sections];
-      arr[index] = { type: 'text', content };
+      const existing = arr[index];
+      const align = existing.type === 'text' ? existing.align : 'center';
+      arr[index] = { type: 'text', content, align };
+      return { ...f, sections: arr };
+    });
+  };
+
+  const updateTextAlign = (index: number, align: TextAlign) => {
+    setForm(f => {
+      const arr = [...f.sections];
+      const existing = arr[index];
+      if (existing.type !== 'text') return f;
+      arr[index] = { ...existing, align };
       return { ...f, sections: arr };
     });
   };
@@ -316,13 +328,36 @@ export function CharacterEditSheet({ character, open, onOpenChange, onSaved }: C
 
                 {/* Section content */}
                 {section.type === 'text' ? (
-                  <Textarea
-                    value={section.content}
-                    onChange={e => updateTextContent(idx, e.target.value)}
-                    rows={4}
-                    className="font-elegant text-sm"
-                    placeholder="Story text..."
-                  />
+                  <div className="space-y-2">
+                    {/* Alignment selector */}
+                    <div className="flex items-center gap-1">
+                      <span className="text-xs text-muted-foreground font-elegant mr-1">Align:</span>
+                      {([
+                        { value: 'left' as TextAlign, icon: AlignLeft, label: 'Left' },
+                        { value: 'center' as TextAlign, icon: AlignCenter, label: 'Center' },
+                        { value: 'right' as TextAlign, icon: AlignRight, label: 'Right' },
+                        { value: 'full' as TextAlign, icon: AlignJustify, label: 'Full' },
+                      ] as const).map(({ value, icon: Icon, label }) => (
+                        <Button
+                          key={value}
+                          variant={(section.align || 'center') === value ? 'default' : 'ghost'}
+                          size="icon"
+                          className="h-7 w-7"
+                          onClick={() => updateTextAlign(idx, value)}
+                          title={label}
+                        >
+                          <Icon className="w-3.5 h-3.5" />
+                        </Button>
+                      ))}
+                    </div>
+                    <Textarea
+                      value={section.content}
+                      onChange={e => updateTextContent(idx, e.target.value)}
+                      rows={4}
+                      className="font-elegant text-sm"
+                      placeholder="Story text..."
+                    />
+                  </div>
                 ) : (
                   <div className="space-y-2">
                     {/* Song list */}
