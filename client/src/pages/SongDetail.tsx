@@ -203,7 +203,7 @@ export default function SongDetail() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-muted-foreground leading-relaxed font-elegant text-base">
+                  <p className="text-muted-foreground leading-relaxed font-elegant text-base whitespace-pre-wrap">
                     {song.prompt}
                   </p>
                 </CardContent>
