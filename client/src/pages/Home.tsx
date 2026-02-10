@@ -16,6 +16,8 @@ import { SongCard } from '@/components/SongCard';
 import { SongCardSkeleton } from '@/components/SongCardSkeleton';
 import { SongTableRow } from '@/components/SongTableRow';
 import { useSongs } from '@/hooks/useSongs';
+import { useDebounce } from '@/hooks/useDebounce';
+import { fetchGenres } from '@/lib/api';
 
 type ViewMode = 'grid' | 'list';
 type SortBy = 'newest' | 'oldest' | 'title' | 'artist' | 'duration';
@@ -28,63 +30,31 @@ export default function Home() {
   const [sortBy, setSortBy] = useState<SortBy>('newest');
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
   const [page, setPage] = useState(1);
+  const [genres, setGenres] = useState<string[]>(['all']);
 
-  const { songs, isLoading, refetch } = useSongs();
+  const debouncedSearch = useDebounce(searchQuery, 300);
+
+  const { songs, total, totalPages, isLoading, refetch } = useSongs({
+    page,
+    limit: SONGS_PER_PAGE,
+    search: debouncedSearch,
+    genre: selectedGenre,
+    sort: sortBy,
+  });
+
+  // Load genres on mount
+  useEffect(() => {
+    fetchGenres()
+      .then(g => setGenres(['all', ...g]))
+      .catch(() => {});
+  }, []);
 
   // Reset pagination when filters change
   useEffect(() => {
     setPage(1);
-  }, [searchQuery, selectedGenre, sortBy]);
+  }, [debouncedSearch, selectedGenre, sortBy]);
 
-  const genres = useMemo(() => {
-    const allGenres = songs.map((song) => song.genre);
-    return ['all', ...Array.from(new Set(allGenres))];
-  }, [songs]);
-
-  const filteredSongs = useMemo(() => {
-    let filtered = [...songs];
-
-    if (searchQuery) {
-      const query = searchQuery.toLowerCase();
-      filtered = filtered.filter(
-        (song) =>
-          song.title.toLowerCase().includes(query) ||
-          song.artist.toLowerCase().includes(query) ||
-          song.tags.some((tag) => tag.toLowerCase().includes(query))
-      );
-    }
-
-    if (selectedGenre !== 'all') {
-      filtered = filtered.filter((song) => song.genre === selectedGenre);
-    }
-
-    filtered.sort((a, b) => {
-      switch (sortBy) {
-        case 'newest':
-          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-        case 'oldest':
-          return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
-        case 'title':
-          return a.title.localeCompare(b.title);
-        case 'artist':
-          return a.artist.localeCompare(b.artist);
-        case 'duration':
-          return b.duration - a.duration;
-        default:
-          return 0;
-      }
-    });
-
-    return filtered;
-  }, [songs, searchQuery, selectedGenre, sortBy]);
-
-  const totalPages = Math.max(1, Math.ceil(filteredSongs.length / SONGS_PER_PAGE));
-  const safePage = Math.min(page, totalPages);
-
-  const displayedSongs = useMemo(
-    () => filteredSongs.slice((safePage - 1) * SONGS_PER_PAGE, safePage * SONGS_PER_PAGE),
-    [filteredSongs, safePage]
-  );
+  const safePage = Math.min(page, Math.max(1, totalPages));
 
   // Build visible page numbers: always show first, last, current, and neighbors
   const pageNumbers = useMemo(() => {
@@ -236,7 +206,7 @@ export default function Home() {
                 <div className="flex items-center gap-2">
                   <Sparkles className="w-4 h-4 text-primary" />
                   <span className="font-mono text-sm text-primary">
-                    {filteredSongs.length} melodies
+                    {total} melodies
                   </span>
                 </div>
 
@@ -276,7 +246,7 @@ export default function Home() {
           </div>
         ) : viewMode === 'grid' ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
-            {displayedSongs.map((song, index) => (
+            {songs.map((song, index) => (
               <SongCard key={song.id} song={song} index={index} onVisibilityChange={refetch} />
             ))}
           </div>
@@ -292,8 +262,8 @@ export default function Home() {
                 <Clock className="w-4 h-4 text-muted-foreground ml-auto" aria-label="再生時間" />
               </div>
               {/* Rows */}
-              {displayedSongs.map((song, index) => (
-                <SongTableRow key={song.id} song={song} index={(safePage - 1) * SONGS_PER_PAGE + index} queue={filteredSongs} onVisibilityChange={refetch} />
+              {songs.map((song, index) => (
+                <SongTableRow key={song.id} song={song} index={(safePage - 1) * SONGS_PER_PAGE + index} queue={songs} onVisibilityChange={refetch} />
               ))}
             </div>
           </div>
@@ -375,12 +345,12 @@ export default function Home() {
         {!isLoading && totalPages > 1 && (
           <div className="text-center mt-4">
             <span className="font-mono text-xs text-muted-foreground">
-              {(safePage - 1) * SONGS_PER_PAGE + 1}–{Math.min(safePage * SONGS_PER_PAGE, filteredSongs.length)} / {filteredSongs.length}
+              {(safePage - 1) * SONGS_PER_PAGE + 1}–{Math.min(safePage * SONGS_PER_PAGE, total)} / {total}
             </span>
           </div>
         )}
 
-        {!isLoading && filteredSongs.length === 0 && (
+        {!isLoading && songs.length === 0 && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}

@@ -1,13 +1,25 @@
 /* Design Philosophy: Grand Harmonic Archive - curated collections view */
 
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Link } from 'wouter';
 import { Music2, Clock, FolderOpen, Sparkles } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { mockPlaylists, getSongsByPlaylistId } from '@/lib/mockData';
+import { fetchPlaylists } from '@/lib/api';
 import { formatDate } from '@/lib/utils';
+import type { Playlist } from '@/../../shared/types';
 
 export default function Playlists() {
+  const [playlists, setPlaylists] = useState<Playlist[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    fetchPlaylists()
+      .then(setPlaylists)
+      .catch(() => setPlaylists([]))
+      .finally(() => setIsLoading(false));
+  }, []);
+
   return (
     <div className="min-h-screen pt-28 pb-32">
       <div className="container">
@@ -36,16 +48,19 @@ export default function Playlists() {
             </div>
           </div>
         </motion.div>
-        
+
+        {/* Loading */}
+        {isLoading && (
+          <div className="text-center py-20">
+            <Sparkles className="w-12 h-12 text-primary mx-auto mb-4 animate-pulse" />
+            <p className="font-elegant text-muted-foreground">Loading collections...</p>
+          </div>
+        )}
+
         {/* Playlist Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {mockPlaylists.map((playlist, index) => {
-            const songs = getSongsByPlaylistId(playlist.id);
-            const totalDuration = songs.reduce((acc, song) => acc + song.duration, 0);
-            const hours = Math.floor(totalDuration / 3600);
-            const minutes = Math.floor((totalDuration % 3600) / 60);
-            
-            return (
+        {!isLoading && (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {playlists.map((playlist, index) => (
               <motion.div
                 key={playlist.id}
                 initial={{ opacity: 0, y: 30 }}
@@ -69,7 +84,7 @@ export default function Playlists() {
                         />
                         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
                         <div className="absolute inset-0 mystical-particles opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                        
+
                         {/* Overlay info */}
                         <div className="absolute bottom-0 left-0 right-0 p-5">
                           <div className="flex items-center gap-3 mb-2">
@@ -78,16 +93,16 @@ export default function Playlists() {
                             </Badge>
                             <div className="flex items-center gap-1 text-xs text-white/90">
                               <Sparkles className="w-3 h-3" />
-                              <span className="font-mono">{songs.length} tracks</span>
+                              <span className="font-mono">{playlist.songIds.length} tracks</span>
                             </div>
                           </div>
                         </div>
-                        
+
                         {/* Decorative corners */}
                         <div className="absolute top-0 left-0 w-10 h-10 border-t-2 border-l-2 border-primary/50 rounded-tl-lg" />
                         <div className="absolute bottom-0 right-0 w-10 h-10 border-b-2 border-r-2 border-primary/50 rounded-br-lg" />
                       </div>
-                      
+
                       {/* Info */}
                       <div className="p-6">
                         <h3 className="font-display text-xl mb-2 text-foreground">
@@ -96,23 +111,16 @@ export default function Playlists() {
                         <p className="font-elegant text-sm text-muted-foreground mb-4 line-clamp-2">
                           {playlist.description}
                         </p>
-                        
+
                         <div className="flex items-center justify-between text-xs mb-4">
                           <div className="flex items-center gap-4 text-muted-foreground">
                             <div className="flex items-center gap-1">
                               <Music2 className="w-4 h-4" />
-                              <span className="font-mono">{songs.length}</span>
-                            </div>
-                            <div className="flex items-center gap-1">
-                              <Clock className="w-4 h-4" />
-                              <span className="font-mono">
-                                {hours > 0 && `${hours}h `}
-                                {minutes}m
-                              </span>
+                              <span className="font-mono">{playlist.songIds.length}</span>
                             </div>
                           </div>
                         </div>
-                        
+
                         <div className="pt-4 border-t border-border/50">
                           <span className="font-mono text-xs text-muted-foreground">
                             Updated: {formatDate(playlist.updatedAt)}
@@ -123,9 +131,17 @@ export default function Playlists() {
                   </div>
                 </Link>
               </motion.div>
-            );
-          })}
-        </div>
+            ))}
+          </div>
+        )}
+
+        {/* Empty state */}
+        {!isLoading && playlists.length === 0 && (
+          <div className="text-center py-20">
+            <Sparkles className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
+            <p className="font-display text-2xl text-muted-foreground">No collections found</p>
+          </div>
+        )}
       </div>
     </div>
   );

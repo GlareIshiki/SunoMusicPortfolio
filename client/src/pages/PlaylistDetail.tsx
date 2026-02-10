@@ -1,20 +1,59 @@
 /* Design Philosophy: Grand Harmonic Archive - collection showcase view */
 
+import { useState, useEffect } from 'react';
 import { useRoute, Link } from 'wouter';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Play, Music2, Clock, FolderOpen } from 'lucide-react';
+import { ArrowLeft, Play, Music2, Clock, FolderOpen, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { SongCard } from '@/components/SongCard';
 import { usePlayer } from '@/contexts/PlayerContext';
-import { getPlaylistById, getSongsByPlaylistId } from '@/lib/mockData';
+import { fetchPlaylists, fetchSongs } from '@/lib/api';
 import { formatDate } from '@/lib/utils';
+import type { Playlist, Song } from '@/../../shared/types';
 
 export default function PlaylistDetail() {
   const [, params] = useRoute('/playlist/:id');
-  const playlist = params?.id ? getPlaylistById(params.id) : null;
-  const songs = playlist ? getSongsByPlaylistId(playlist.id) : [];
+  const [playlist, setPlaylist] = useState<Playlist | null>(null);
+  const [songs, setSongs] = useState<Song[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const { playSong } = usePlayer();
-  
+
+  useEffect(() => {
+    if (!params?.id) {
+      setIsLoading(false);
+      return;
+    }
+
+    Promise.all([fetchPlaylists(), fetchSongs({ limit: 100 })])
+      .then(([playlists, result]) => {
+        const found = playlists.find(p => p.id === params.id);
+        setPlaylist(found ?? null);
+        if (found) {
+          const allSongs = result.songs;
+          const playlistSongs = found.songIds
+            .map(sid => allSongs.find(s => s.id === sid))
+            .filter((s): s is Song => s != null);
+          setSongs(playlistSongs);
+        }
+      })
+      .catch(() => {
+        setPlaylist(null);
+        setSongs([]);
+      })
+      .finally(() => setIsLoading(false));
+  }, [params?.id]);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <Sparkles className="w-12 h-12 text-primary mx-auto mb-4 animate-pulse" />
+          <p className="font-elegant text-muted-foreground">Loading collection...</p>
+        </div>
+      </div>
+    );
+  }
+
   if (!playlist) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -31,17 +70,17 @@ export default function PlaylistDetail() {
       </div>
     );
   }
-  
+
   const totalDuration = songs.reduce((acc, song) => acc + song.duration, 0);
   const hours = Math.floor(totalDuration / 3600);
   const minutes = Math.floor((totalDuration % 3600) / 60);
-  
+
   const handlePlayAll = () => {
     if (songs.length > 0) {
       playSong(songs[0], songs);
     }
   };
-  
+
   return (
     <div className="min-h-screen pt-28 pb-32">
       {/* Hero Section */}
@@ -53,7 +92,7 @@ export default function PlaylistDetail() {
           />
         </div>
         <div className="absolute inset-0 mystical-particles opacity-30" />
-        
+
         <div className="relative container">
           <Link href="/playlists">
             <Button variant="ghost" className="mb-6 rounded-lg font-elegant">
@@ -61,7 +100,7 @@ export default function PlaylistDetail() {
               Back to Collections
             </Button>
           </Link>
-          
+
           <motion.div
             initial={{ opacity: 0, y: 40 }}
             animate={{ opacity: 1, y: 0 }}
@@ -84,7 +123,7 @@ export default function PlaylistDetail() {
                   </div>
                   <div className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-primary animate-pulse" />
                 </motion.div>
-                
+
                 <div className="flex-1">
                   <div className="flex items-center gap-4 mb-4">
                     <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary via-accent to-primary p-0.5 gold-glow">
@@ -96,14 +135,14 @@ export default function PlaylistDetail() {
                       Curated Collection
                     </span>
                   </div>
-                  
+
                   <h1 className="font-display text-4xl md:text-5xl font-bold mb-4">
                     {playlist.name}
                   </h1>
                   <p className="font-elegant text-lg text-muted-foreground mb-6 max-w-2xl">
                     {playlist.description}
                   </p>
-                  
+
                   <div className="flex flex-wrap items-center gap-6 text-sm mb-6">
                     <div className="flex items-center gap-2 text-muted-foreground">
                       <Music2 className="w-4 h-4" />
@@ -120,7 +159,7 @@ export default function PlaylistDetail() {
                       Created: {formatDate(playlist.createdAt)}
                     </span>
                   </div>
-                  
+
                   <Button
                     size="lg"
                     onClick={handlePlayAll}
@@ -135,7 +174,7 @@ export default function PlaylistDetail() {
           </motion.div>
         </div>
       </section>
-      
+
       {/* Songs List */}
       <section className="container">
         <div className="ornate-card elegant-shadow mb-8">
@@ -145,7 +184,7 @@ export default function PlaylistDetail() {
             </h2>
           </div>
         </div>
-        
+
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
           {songs.map((song, index) => (
             <SongCard key={song.id} song={song} index={index} />

@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from 'react';
-import { adminLogin as apiLogin, adminLogout as apiLogout, verifyAdmin } from '@/lib/api';
+import { adminLogin as apiLogin, adminLogout as apiLogout, verifyAdmin, getAdminToken } from '@/lib/api';
 
 interface AdminContextType {
   isAdmin: boolean;
@@ -18,6 +18,12 @@ export function AdminProvider({ children }: { children: ReactNode }) {
   const [showLoginDialog, setShowLoginDialog] = useState(false);
 
   useEffect(() => {
+    // Only verify if there's a stored token
+    const token = getAdminToken();
+    if (!token) {
+      setIsLoading(false);
+      return;
+    }
     verifyAdmin()
       .then(setIsAdmin)
       .catch(() => setIsAdmin(false))
@@ -41,12 +47,12 @@ export function AdminProvider({ children }: { children: ReactNode }) {
   }, [isAdmin]);
 
   const login = useCallback(async (password: string): Promise<boolean> => {
-    const ok = await apiLogin(password);
-    if (ok) {
+    const result = await apiLogin(password);
+    if (result.ok) {
       setIsAdmin(true);
       setShowLoginDialog(false);
     }
-    return ok;
+    return result.ok;
   }, []);
 
   const logout = useCallback(async () => {
