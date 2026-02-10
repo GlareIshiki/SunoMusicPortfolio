@@ -11,6 +11,7 @@ import { AdminProvider } from "./contexts/AdminContext";
 import { AdminLoginDialog } from "./components/AdminLoginDialog";
 import { MusicPlayer } from "./components/MusicPlayer";
 import { Header } from "./components/Header";
+import { ParticleEffects } from "./components/ParticleEffects";
 import Home from "./pages/Home";
 import SongDetail from "./pages/SongDetail";
 import Playlists from "./pages/Playlists";
@@ -42,6 +43,7 @@ function App() {
             <TooltipProvider>
               <Toaster />
               <AdminLoginDialog />
+              <ParticleEffects />
               <Router />
               <MusicPlayer />
             </TooltipProvider>
