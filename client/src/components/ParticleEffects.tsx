@@ -75,7 +75,7 @@ export function ParticleEffects() {
         y: Math.random() * canvas!.height,
         char: RUNE_CHARS[Math.floor(Math.random() * RUNE_CHARS.length)],
         size: Math.random() * 14 + 10,
-        speedY: Math.random() * 0.25 + 0.08,
+        speedY: Math.random() * 0.1 + 0.03,
         drift: (Math.random() - 0.5) * 0.15,
         rotation: Math.random() * Math.PI * 2,
         rotationSpeed: (Math.random() - 0.5) * 0.005,
@@ -90,7 +90,7 @@ export function ParticleEffects() {
         y: Math.random() * canvas!.height,
         width: Math.random() * 8 + 4,
         height: Math.random() * 5 + 3,
-        speedY: Math.random() * 0.35 + 0.15,
+        speedY: Math.random() * 0.15 + 0.05,
         swayPhase: Math.random() * Math.PI * 2,
         swaySpeed: Math.random() * 0.01 + 0.005,
         swayAmp: Math.random() * 40 + 20,
@@ -224,7 +224,7 @@ export function ParticleEffects() {
   return (
     <canvas
       ref={canvasRef}
-      className="fixed inset-0 pointer-events-none z-10"
+      className="fixed inset-0 pointer-events-none z-0"
       aria-hidden="true"
     />
   );
