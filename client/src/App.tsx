@@ -44,8 +44,10 @@ function App() {
               <Toaster />
               <AdminLoginDialog />
               <ParticleEffects />
-              <Router />
-              <MusicPlayer />
+              <div className="relative z-[2]">
+                <Router />
+                <MusicPlayer />
+              </div>
             </TooltipProvider>
           </PlayerProvider>
         </ThemeProvider>
