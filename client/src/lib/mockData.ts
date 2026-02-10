@@ -63,6 +63,7 @@ function generateSong(id: number): Song {
     originalUrl: isCover ? 'https://example.com/original-song' : undefined,
     createdAt: date.toISOString().split('T')[0],
     duration,
+    visible: true,
   };
 }
 

@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Search, Grid3x3, List, Sparkles, Clock, ChevronDown } from 'lucide-react';
+import { Search, Grid3x3, List, Sparkles, Clock, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import {
@@ -15,7 +15,7 @@ import {
 import { SongCard } from '@/components/SongCard';
 import { SongCardSkeleton } from '@/components/SongCardSkeleton';
 import { SongTableRow } from '@/components/SongTableRow';
-import { mockSongs } from '@/lib/mockData';
+import { useSongs } from '@/hooks/useSongs';
 
 type ViewMode = 'grid' | 'list';
 type SortBy = 'newest' | 'oldest' | 'title' | 'artist' | 'duration';
@@ -28,26 +28,21 @@ export default function Home() {
   const [sortBy, setSortBy] = useState<SortBy>('newest');
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
   const [page, setPage] = useState(1);
-  const [isLoading, setIsLoading] = useState(true);
+
+  const { songs, isLoading, refetch } = useSongs();
 
   // Reset pagination when filters change
   useEffect(() => {
     setPage(1);
   }, [searchQuery, selectedGenre, sortBy]);
 
-  // Simulate initial loading
-  useEffect(() => {
-    const timer = setTimeout(() => setIsLoading(false), 300);
-    return () => clearTimeout(timer);
-  }, []);
-
   const genres = useMemo(() => {
-    const allGenres = mockSongs.map((song) => song.genre);
+    const allGenres = songs.map((song) => song.genre);
     return ['all', ...Array.from(new Set(allGenres))];
-  }, []);
+  }, [songs]);
 
   const filteredSongs = useMemo(() => {
-    let filtered = [...mockSongs];
+    let filtered = [...songs];
 
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
@@ -81,13 +76,34 @@ export default function Home() {
     });
 
     return filtered;
-  }, [searchQuery, selectedGenre, sortBy]);
+  }, [songs, searchQuery, selectedGenre, sortBy]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredSongs.length / SONGS_PER_PAGE));
+  const safePage = Math.min(page, totalPages);
 
   const displayedSongs = useMemo(
-    () => filteredSongs.slice(0, page * SONGS_PER_PAGE),
-    [filteredSongs, page]
+    () => filteredSongs.slice((safePage - 1) * SONGS_PER_PAGE, safePage * SONGS_PER_PAGE),
+    [filteredSongs, safePage]
   );
-  const hasMore = displayedSongs.length < filteredSongs.length;
+
+  // Build visible page numbers: always show first, last, current, and neighbors
+  const pageNumbers = useMemo(() => {
+    if (totalPages <= 7) return Array.from({ length: totalPages }, (_, i) => i + 1);
+    const pages: (number | '...')[] = [];
+    const current = safePage;
+    const around = new Set([1, 2, current - 1, current, current + 1, totalPages - 1, totalPages]);
+    const sorted = Array.from(around).filter(n => n >= 1 && n <= totalPages).sort((a, b) => a - b);
+    for (let i = 0; i < sorted.length; i++) {
+      if (i > 0 && sorted[i] - sorted[i - 1] > 1) pages.push('...');
+      pages.push(sorted[i]);
+    }
+    return pages;
+  }, [safePage, totalPages]);
+
+  const goToPage = (p: number) => {
+    setPage(Math.max(1, Math.min(p, totalPages)));
+    window.scrollTo({ top: document.querySelector('#songs-section')?.getBoundingClientRect().top! + window.scrollY - 100, behavior: 'smooth' });
+  };
 
   return (
     <div className="min-h-screen pt-24 pb-32">
@@ -118,7 +134,7 @@ export default function Home() {
                 transition={{ duration: 60, repeat: Infinity, ease: "linear" }}
               >
                 <img
-                  src="https://private-us-east-1.manuscdn.com/sessionFile/s1rF6OwbRH7CMoYsrPbBKV/sandbox/sRwgALMr55TD0qa4vI4D5e_1770654684992_na1fn_ZmdvLW11c2ljLWVtYmxlbQ.png?x-oss-process=image/resize,w_1920,h_1920/format,webp/quality,q_80&Expires=1798761600&Policy=eyJTdGF0ZW1lbnQiOlt7IlJlc291cmNlIjoiaHR0cHM6Ly9wcml2YXRlLXVzLWVhc3QtMS5tYW51c2Nkbi5jb20vc2Vzc2lvbkZpbGUvczFyRjZPd2JSSDdDTW9Zc3JQYkJLVi9zYW5kYm94L3NSd2dBTE1yNTVURDBxYTR2STRENWVfMTc3MDY1NDY4NDk5Ml9uYTFmbl9abWR2TFcxMWMybGpMV1Z0WW14bGJRLnBuZz94LW9zcy1wcm9jZXNzPWltYWdlL3Jlc2l6ZSx3XzE5MjAsaF8xOTIwL2Zvcm1hdCx3ZWJwL3F1YWxpdHkscV84MCIsIkNvbmRpdGlvbiI6eyJEYXRlTGVzc1RoYW4iOnsiQVdTOkVwb2NoVGltZSI6MTc5ODc2MTYwMH19fV19&Key-Pair-Id=K2HSFNDJXOU9YS&Signature=AGG-0kjuXdWdACszwnqyUImeGgZaokZKOAR78vWQKCQDSrQ5O4pzCBChIULgEYIduVNvXjBu1EjOOc~DO~AO5dx-jD03G2v2u97Uv7qX98eqYqF2xxKEZHenKLrUzGUZMKf38eAxacllmp1dE4sJtTlzPVhk3S-V5VLNyg-6I-xWSPvUOhlap3goOV7ldCfOlwgf8Acmg3fv9LcTdriRxX2FG8ZGnleNXsjCTnpVxqYg6993zJzShz98ShXRC~VpiClgw8dKGoWHVeebqlPZSiGT9xPvP4pQ1eLnm8bfileIkqzWUoaxH62ONC2xVvYUkbReiJA7TezdFhuUfuusjw__"
+                  src="https://private-us-east-1.manuscdn.com/sessionFile/s1rF6OwbRH7CMoYsrPbBKV/sandbox/sRwgALMr55TD0qa4vI4D5e_1770654684992_na1fn_ZmdvLW11c2ljLWVtYmxlbQ.png?x-oss-process=image/resize,w_1920,h_1920/format,webp/quality,q_80&Expires=1798761600&Policy=eyJTdGF0ZW1lbnQiOlt7IlJlc291cmNlIjoiaHR0cHM6Ly9wcml2YXRlLXVzLWVhc3QtMS5tYW51c2Nkbi5jb20vc2Vzc2lvbkZpbGUvczFyRjZPd2JSSDdDTW9Zc3JQYkJLVi9zYW5kYm94L3NSd2dBTE1yNTVURDBxYTR2STRENWVfMTc3MDY1NDY4NDk5Ml9uYTFmbl9abWR2TFcxMWMybGpMV1Z0WW14bGJRLnBuZz94LW9zcy1wcm9jZXNzPWltYWdlL3Jlc2l6ZSx3XzE5MjAsaF8xOTIwL2Zvcm1hdCx3ZWJwL3F1YWxpdHkscV84MCIsIkNvbmRpdGlvbiI6eyJEYXRlTGVzc1RoYW4iOnsiQVdTOkVwb2NoVGltZSI6MTc5ODc2MTYwMH19fV19&Key-Pair-Id=K2HSFNDJXOU9YS&Signature=AGG-0kjuXdWdACszwnqyUImeGgZaokZKOAR78u2VQKCQDSrQ5O4pzCBChIULgEYIduVNvXjBu1EjOOc~DO~AO5dx-jD03G2v2u97Uv7qX98eqYqF2xxKEZHenKLrUzGUZMKf38eAxacllmp1dE4sJtTlzPVhk3S-V5VLNyg-6I-xWSPvUOhlap3goOV7ldCfOlwgf8Acmg3fv9LcTdriRxX2FG8ZGnleNXsjCTnpVxqYg6993zJzShz98ShXRC~VpiClgw8dKGoWHVeebqlPZSiGT9xPvP4pQ1eLnm8bfileIkqzWUoaxH62ONC2xVvYUkbReiJA7TezdFhuUfuusjw__"
                   alt="Emblem"
                   className="w-32 h-32 drop-shadow-2xl"
                 />
@@ -251,7 +267,7 @@ export default function Home() {
       </section>
 
       {/* Songs Grid / Table */}
-      <section className="container">
+      <section id="songs-section" className="container">
         {isLoading ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
             {Array.from({ length: 8 }).map((_, i) => (
@@ -261,7 +277,7 @@ export default function Home() {
         ) : viewMode === 'grid' ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
             {displayedSongs.map((song, index) => (
-              <SongCard key={song.id} song={song} index={index} />
+              <SongCard key={song.id} song={song} index={index} onVisibilityChange={refetch} />
             ))}
           </div>
         ) : (
@@ -277,24 +293,90 @@ export default function Home() {
               </div>
               {/* Rows */}
               {displayedSongs.map((song, index) => (
-                <SongTableRow key={song.id} song={song} index={index} queue={filteredSongs} />
+                <SongTableRow key={song.id} song={song} index={(safePage - 1) * SONGS_PER_PAGE + index} queue={filteredSongs} onVisibilityChange={refetch} />
               ))}
             </div>
           </div>
         )}
 
-        {/* Load More */}
-        {!isLoading && hasMore && (
-          <div className="flex justify-center mt-12">
+        {/* Pagination */}
+        {!isLoading && totalPages > 1 && (
+          <nav aria-label="ページナビゲーション" className="flex items-center justify-center gap-1 mt-12">
+            {/* First */}
             <Button
-              variant="outline"
-              size="lg"
-              onClick={() => setPage(p => p + 1)}
-              className="gap-2 font-elegant text-base border-primary/30 hover:bg-primary/10 hover:text-primary"
+              variant="ghost"
+              size="icon"
+              onClick={() => goToPage(1)}
+              disabled={safePage === 1}
+              aria-label="最初のページ"
+              className="rounded-lg"
             >
-              <ChevronDown className="w-5 h-5" />
-              もっと見る ({displayedSongs.length} / {filteredSongs.length})
+              <ChevronsLeft className="w-4 h-4" />
             </Button>
+            {/* Prev */}
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => goToPage(safePage - 1)}
+              disabled={safePage === 1}
+              aria-label="前のページ"
+              className="rounded-lg"
+            >
+              <ChevronLeft className="w-4 h-4" />
+            </Button>
+
+            {/* Page numbers */}
+            {pageNumbers.map((p, i) =>
+              p === '...' ? (
+                <span key={`ellipsis-${i}`} className="w-10 text-center font-mono text-sm text-muted-foreground select-none">
+                  ...
+                </span>
+              ) : (
+                <Button
+                  key={p}
+                  variant={p === safePage ? 'default' : 'ghost'}
+                  size="icon"
+                  onClick={() => goToPage(p)}
+                  aria-label={`ページ ${p}`}
+                  aria-current={p === safePage ? 'page' : undefined}
+                  className={`rounded-lg font-mono text-sm ${p === safePage ? 'gold-glow' : ''}`}
+                >
+                  {p}
+                </Button>
+              )
+            )}
+
+            {/* Next */}
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => goToPage(safePage + 1)}
+              disabled={safePage === totalPages}
+              aria-label="次のページ"
+              className="rounded-lg"
+            >
+              <ChevronRight className="w-4 h-4" />
+            </Button>
+            {/* Last */}
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => goToPage(totalPages)}
+              disabled={safePage === totalPages}
+              aria-label="最後のページ"
+              className="rounded-lg"
+            >
+              <ChevronsRight className="w-4 h-4" />
+            </Button>
+          </nav>
+        )}
+
+        {/* Page info */}
+        {!isLoading && totalPages > 1 && (
+          <div className="text-center mt-4">
+            <span className="font-mono text-xs text-muted-foreground">
+              {(safePage - 1) * SONGS_PER_PAGE + 1}–{Math.min(safePage * SONGS_PER_PAGE, filteredSongs.length)} / {filteredSongs.length}
+            </span>
           </div>
         )}
 

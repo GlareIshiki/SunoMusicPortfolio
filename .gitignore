@@ -107,3 +107,9 @@ temp/
 
 # Webdev artifacts (checkpoint zips, migrations, etc.)
 .webdev/
+
+# Uploaded files
+data/uploads/
+
+# npm lockfile (using pnpm)
+package-lock.json

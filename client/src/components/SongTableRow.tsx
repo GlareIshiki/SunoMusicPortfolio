@@ -1,17 +1,22 @@
 import { Link } from 'wouter';
-import { Play, Pause } from 'lucide-react';
+import { Play, Pause, Eye, EyeOff } from 'lucide-react';
 import { usePlayer } from '@/contexts/PlayerContext';
+import { useAdmin } from '@/contexts/AdminContext';
+import { updateSong } from '@/lib/api';
 import { formatDuration, formatDate, cn } from '@/lib/utils';
+import { toast } from 'sonner';
 import type { Song } from '@/../../shared/types';
 
 interface SongTableRowProps {
   song: Song;
   index: number;
   queue: Song[];
+  onVisibilityChange?: () => void;
 }
 
-export function SongTableRow({ song, index, queue }: SongTableRowProps) {
+export function SongTableRow({ song, index, queue, onVisibilityChange }: SongTableRowProps) {
   const { currentSong, isPlaying, playSong, togglePlay } = usePlayer();
+  const { isAdmin } = useAdmin();
   const isCurrentSong = currentSong?.id === song.id;
 
   const handlePlayClick = (e: React.MouseEvent) => {
@@ -24,16 +29,45 @@ export function SongTableRow({ song, index, queue }: SongTableRowProps) {
     }
   };
 
+  const handleToggleVisibility = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    try {
+      await updateSong(song.id, { visible: !song.visible });
+      toast.success(song.visible ? 'Song hidden' : 'Song visible');
+      onVisibilityChange?.();
+    } catch {
+      toast.error('Failed to update visibility');
+    }
+  };
+
   return (
     <Link href={`/song/${song.id}`}>
       <div
         className={cn(
-          'group grid grid-cols-[2.5rem_1fr_3rem] md:grid-cols-[2.5rem_2fr_1fr_1fr_3.5rem] gap-3 items-center px-4 py-2 rounded-lg transition-colors duration-200 cursor-pointer',
+          'group grid gap-3 items-center px-4 py-2 rounded-lg transition-colors duration-200 cursor-pointer',
+          isAdmin
+            ? 'grid-cols-[2rem_2.5rem_1fr_3rem] md:grid-cols-[2rem_2.5rem_2fr_1fr_1fr_3.5rem]'
+            : 'grid-cols-[2.5rem_1fr_3rem] md:grid-cols-[2.5rem_2fr_1fr_1fr_3.5rem]',
           isCurrentSong
             ? 'bg-primary/10'
-            : 'hover:bg-muted/50'
+            : 'hover:bg-muted/50',
+          isAdmin && !song.visible && 'opacity-50'
         )}
       >
+        {/* Admin visibility toggle */}
+        {isAdmin && (
+          <button
+            onClick={handleToggleVisibility}
+            className="flex items-center justify-center w-6 h-6 rounded-full hover:bg-muted transition-colors"
+          >
+            {song.visible ? (
+              <Eye className="w-3.5 h-3.5 text-primary" />
+            ) : (
+              <EyeOff className="w-3.5 h-3.5 text-muted-foreground" />
+            )}
+          </button>
+        )}
         {/* # / Play button */}
         <div className="flex items-center justify-center w-8">
           <span

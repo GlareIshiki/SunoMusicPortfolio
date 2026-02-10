@@ -13,6 +13,7 @@ export interface Song {
   originalUrl?: string;
   createdAt: string;
   duration: number; // in seconds
+  visible: boolean;
 }
 
 export interface Playlist {

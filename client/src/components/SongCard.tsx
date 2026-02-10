@@ -1,10 +1,13 @@
 import { motion } from 'framer-motion';
 import { Link } from 'wouter';
-import { Play, Pause, Clock, Calendar, Sparkles } from 'lucide-react';
+import { Play, Pause, Clock, Calendar, Sparkles, Eye, EyeOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { usePlayer } from '@/contexts/PlayerContext';
+import { useAdmin } from '@/contexts/AdminContext';
+import { updateSong } from '@/lib/api';
 import { formatDuration, formatDate } from '@/lib/utils';
+import { toast } from 'sonner';
 import type { Song } from '@/../../shared/types';
 
 const SONGS_PER_PAGE = 40;
@@ -12,10 +15,12 @@ const SONGS_PER_PAGE = 40;
 interface SongCardProps {
   song: Song;
   index: number;
+  onVisibilityChange?: () => void;
 }
 
-export function SongCard({ song, index }: SongCardProps) {
+export function SongCard({ song, index, onVisibilityChange }: SongCardProps) {
   const { currentSong, isPlaying, playSong, togglePlay } = usePlayer();
+  const { isAdmin } = useAdmin();
   const isCurrentSong = currentSong?.id === song.id;
 
   const handlePlayClick = (e: React.MouseEvent) => {
@@ -26,6 +31,18 @@ export function SongCard({ song, index }: SongCardProps) {
       togglePlay();
     } else {
       playSong(song);
+    }
+  };
+
+  const handleToggleVisibility = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    try {
+      await updateSong(song.id, { visible: !song.visible });
+      toast.success(song.visible ? 'Song hidden' : 'Song visible');
+      onVisibilityChange?.();
+    } catch {
+      toast.error('Failed to update visibility');
     }
   };
 
@@ -41,7 +58,7 @@ export function SongCard({ song, index }: SongCardProps) {
       whileHover={{ y: -8, scale: 1.02 }}
     >
       <Link href={`/song/${song.id}`}>
-        <div className="ornate-card elegant-shadow transition-all duration-500 hover:gold-glow group cursor-pointer">
+        <div className={`ornate-card elegant-shadow transition-all duration-500 hover:gold-glow group cursor-pointer ${isAdmin && !song.visible ? 'opacity-50 grayscale-[50%]' : ''}`}>
           <div className="ornate-card-inner p-0">
             {/* Cover Image */}
             <div className="relative aspect-square overflow-hidden rounded-t-lg">
@@ -84,8 +101,22 @@ export function SongCard({ song, index }: SongCardProps) {
                 </div>
               )}
 
+              {/* Admin visibility toggle */}
+              {isAdmin && (
+                <button
+                  onClick={handleToggleVisibility}
+                  className="absolute top-3 left-3 z-10 w-8 h-8 rounded-full bg-card/80 backdrop-blur-sm flex items-center justify-center border border-primary/30 hover:gold-glow transition-all"
+                >
+                  {song.visible ? (
+                    <Eye className="w-4 h-4 text-primary" />
+                  ) : (
+                    <EyeOff className="w-4 h-4 text-muted-foreground" />
+                  )}
+                </button>
+              )}
+
               {/* Cover badge */}
-              {song.isCover && (
+              {!isAdmin && song.isCover && (
                 <div className="absolute top-3 left-3">
                   <Badge variant="secondary" className="rounded-full font-elegant text-xs backdrop-blur-sm">
                     Cover

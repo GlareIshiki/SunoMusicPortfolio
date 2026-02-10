@@ -1,25 +1,40 @@
 /* Design Philosophy: Grand Harmonic Archive - detailed melody analysis view */
 
-import { useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useRoute, Link } from 'wouter';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Play, Pause, Clock, Calendar, Tag, Music2, ExternalLink, FileAudio, Sparkles } from 'lucide-react';
+import { ArrowLeft, Play, Pause, Clock, Calendar, Tag, Music2, ExternalLink, FileAudio, Sparkles, Pencil } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { usePlayer } from '@/contexts/PlayerContext';
-import { getSongById } from '@/lib/mockData';
+import { useAdmin } from '@/contexts/AdminContext';
+import { useSong } from '@/hooks/useSongs';
+import { SongEditSheet } from '@/components/SongEditSheet';
 import { formatDuration, formatDate } from '@/lib/utils';
 
 export default function SongDetail() {
   const [, params] = useRoute('/song/:id');
-  const song = params?.id ? getSongById(params.id) : null;
+  const { song, isLoading, refetch } = useSong(params?.id);
   const { currentSong, isPlaying, playSong, togglePlay } = usePlayer();
-  
+  const { isAdmin } = useAdmin();
+  const [editOpen, setEditOpen] = useState(false);
+
   useEffect(() => {
     window.scrollTo(0, 0);
   }, [params?.id]);
-  
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <Sparkles className="w-12 h-12 text-primary mx-auto mb-4 animate-pulse" />
+          <p className="font-elegant text-muted-foreground">Loading melody...</p>
+        </div>
+      </div>
+    );
+  }
+
   if (!song) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -36,9 +51,9 @@ export default function SongDetail() {
       </div>
     );
   }
-  
+
   const isCurrentSong = currentSong?.id === song.id;
-  
+
   const handlePlayClick = () => {
     if (isCurrentSong) {
       togglePlay();
@@ -46,7 +61,7 @@ export default function SongDetail() {
       playSong(song);
     }
   };
-  
+
   return (
     <div className="min-h-screen pt-28 pb-32">
       {/* Hero Section */}
@@ -58,7 +73,7 @@ export default function SongDetail() {
           />
         </div>
         <div className="absolute inset-0 mystical-particles opacity-30" />
-        
+
         <div className="relative container">
           <Link href="/">
             <Button variant="ghost" className="mb-6 rounded-lg font-elegant">
@@ -66,7 +81,7 @@ export default function SongDetail() {
               Back to Archive
             </Button>
           </Link>
-          
+
           <motion.div
             initial={{ opacity: 0, y: 40 }}
             animate={{ opacity: 1, y: 0 }}
@@ -96,8 +111,15 @@ export default function SongDetail() {
                       </Badge>
                     </div>
                   )}
+                  {isAdmin && !song.visible && (
+                    <div className="absolute bottom-4 left-4">
+                      <Badge variant="secondary" className="font-elegant rounded-full backdrop-blur-sm">
+                        Hidden
+                      </Badge>
+                    </div>
+                  )}
                 </motion.div>
-                
+
                 {/* Info */}
                 <div className="flex-1 w-full">
                   <div className="flex items-center gap-4 mb-4">
@@ -110,12 +132,12 @@ export default function SongDetail() {
                       Eternal Melody
                     </span>
                   </div>
-                  
+
                   <h1 className="font-display text-3xl md:text-5xl font-bold mb-3">
                     {song.title}
                   </h1>
                   <p className="font-elegant text-xl md:text-2xl text-muted-foreground mb-6">{song.artist}</p>
-                  
+
                   <div className="flex flex-wrap items-center gap-4 mb-6">
                     <Button
                       size="lg"
@@ -134,7 +156,19 @@ export default function SongDetail() {
                         </>
                       )}
                     </Button>
-                    
+
+                    {isAdmin && (
+                      <Button
+                        variant="outline"
+                        size="lg"
+                        onClick={() => setEditOpen(true)}
+                        className="rounded-lg border-primary/30 text-primary hover:bg-primary/10"
+                      >
+                        <Pencil className="w-5 h-5 mr-2" />
+                        Edit
+                      </Button>
+                    )}
+
                     {isCurrentSong && (
                       <Badge className="bg-primary/20 text-primary border-primary font-elegant rounded-full animate-glow-pulse flex items-center gap-1">
                         <Sparkles className="w-3 h-3" />
@@ -148,7 +182,7 @@ export default function SongDetail() {
           </motion.div>
         </div>
       </section>
-      
+
       {/* Details Section */}
       <section className="container">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -175,7 +209,7 @@ export default function SongDetail() {
                 </CardContent>
               </div>
             </motion.div>
-            
+
             {/* Tags */}
             <motion.div
               initial={{ opacity: 0, y: 30 }}
@@ -205,7 +239,7 @@ export default function SongDetail() {
                 </CardContent>
               </div>
             </motion.div>
-            
+
             {/* Original Song Link */}
             {song.isCover && song.originalUrl && (
               <motion.div
@@ -236,7 +270,7 @@ export default function SongDetail() {
               </motion.div>
             )}
           </div>
-          
+
           {/* Sidebar Info */}
           <div className="space-y-8">
             <motion.div
@@ -257,7 +291,7 @@ export default function SongDetail() {
                       <p className="font-elegant">{song.genre}</p>
                     </div>
                   </div>
-                  
+
                   <div className="flex items-start gap-3">
                     <Clock className="w-5 h-5 text-primary mt-0.5" strokeWidth={2} />
                     <div className="flex-1">
@@ -265,7 +299,7 @@ export default function SongDetail() {
                       <p className="font-mono">{formatDuration(song.duration)}</p>
                     </div>
                   </div>
-                  
+
                   <div className="flex items-start gap-3">
                     <Calendar className="w-5 h-5 text-primary mt-0.5" strokeWidth={2} />
                     <div className="flex-1">
@@ -279,6 +313,16 @@ export default function SongDetail() {
           </div>
         </div>
       </section>
+
+      {/* Edit Sheet */}
+      {isAdmin && (
+        <SongEditSheet
+          song={song}
+          open={editOpen}
+          onOpenChange={setEditOpen}
+          onSaved={refetch}
+        />
+      )}
     </div>
   );
 }

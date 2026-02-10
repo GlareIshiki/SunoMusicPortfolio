@@ -7,6 +7,8 @@ import { Route, Switch } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import { PlayerProvider } from "./contexts/PlayerContext";
+import { AdminProvider } from "./contexts/AdminContext";
+import { AdminLoginDialog } from "./components/AdminLoginDialog";
 import { MusicPlayer } from "./components/MusicPlayer";
 import { Header } from "./components/Header";
 import Home from "./pages/Home";
@@ -34,15 +36,18 @@ function Router() {
 function App() {
   return (
     <ErrorBoundary>
-      <ThemeProvider defaultTheme="dark" switchable>
-        <PlayerProvider>
-          <TooltipProvider>
-            <Toaster />
-            <Router />
-            <MusicPlayer />
-          </TooltipProvider>
-        </PlayerProvider>
-      </ThemeProvider>
+      <AdminProvider>
+        <ThemeProvider defaultTheme="dark" switchable>
+          <PlayerProvider>
+            <TooltipProvider>
+              <Toaster />
+              <AdminLoginDialog />
+              <Router />
+              <MusicPlayer />
+            </TooltipProvider>
+          </PlayerProvider>
+        </ThemeProvider>
+      </AdminProvider>
     </ErrorBoundary>
   );
 }
