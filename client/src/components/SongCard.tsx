@@ -83,13 +83,17 @@ export function SongCard({ song, index, onVisibilityChange }: SongCardProps) {
 
             {/* Play icon overlay */}
             <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 [@media(hover:none)]:opacity-70 transition-opacity duration-300 pointer-events-none">
-              <div className="w-16 h-16 rounded-full bg-gradient-to-br from-primary via-accent to-primary flex items-center justify-center gold-glow">
+              <Button
+                size="icon"
+                tabIndex={-1}
+                className="w-16 h-16 rounded-full bg-gradient-to-br from-primary via-accent to-primary hover:from-primary hover:via-accent hover:to-primary gold-glow pointer-events-none"
+              >
                 {isCurrentSong && isPlaying ? (
                   <Pause className="w-8 h-8 text-background" strokeWidth={2.5} />
                 ) : (
                   <Play className="w-8 h-8 text-background ml-1" strokeWidth={2.5} />
                 )}
-              </div>
+              </Button>
             </div>
 
             {/* Status indicator */}
