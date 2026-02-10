@@ -83,7 +83,7 @@ export default function Home() {
         <div
           className="absolute inset-0 bg-cover bg-center"
           style={{
-            backgroundImage: `url(https://private-us-east-1.manuscdn.com/sessionFile/s1rF6OwbRH7CMoYsrPbBKV/sandbox/sRwgALMr55TD0qa4vI4D5e-img-1_1770654682000_na1fn_ZmdvLWhlcm8tYmFja2dyb3VuZA.png?x-oss-process=image/resize,w_1920,h_1920/format,webp/quality,q_80&Expires=1798761600&Policy=eyJTdGF0ZW1lbnQiOlt7IlJlc291cmNlIjoiaHR0cHM6Ly9wcml2YXRlLXVzLWVhc3QtMS5tYW51c2Nkbi5jb20vc2Vzc2lvbkZpbGUvczFyRjZPd2JSSDdDTW9Zc3JQYkJLVi9zYW5kYm94L3NSd2dBTE1yNTVURDBxYTR2STRENWUtaW1nLTFfMTc3MDY1NDY4MjAwMF9uYTFmbl9abWR2TFdobGNtOHRZbUZqYTJkeWIzVnVaQS5wbmc~eC1vc3MtcHJvY2Vzcz1pbWFnZS9yZXNpemUsd18xOTIwLGhfMTkyMC9mb3JtYXQsd2VicC9xdWFsaXR5LHFfODAiLCJDb25kaXRpb24iOnsiRGF0ZUxlc3NUaGFuIjp7IkFXUzpFcG9jaFRpbWUiOjE3OTg3NjE2MDB9fX1dfQ__&Key-Pair-Id=K2HSFNDJXOU9YS&Signature=dyk2t5JMsAyJkiwLJn3ObXILkZyadCwzNZkvh9MuDhBiUE6fjXGGWDpYLs7axzx8n~PLHyo5VT1LGmC6WRcIu8kqYOqEZDleJFRXTVKMEfA0gH4Tiu3ThLP6eT6btcXOPLWL3VUEc1HP-oWrd18JQOGMDH4Q94Cv-3twkALYE0fAEFffp2lpwlHFicnHAATOwA2bmVFlBVBwWEKFoRks2lqPHx46ErahTsK~XQQ-XWEY4h5nsTv96nOFg9xUw4MkqTFVMm5UG9k7oXdB7PJwQd~7qHFCo5ygsuq-p7Uh2pctt8I3UcfbjM1QJX~GDS1-cAdzZoTrqpfv-i41I8Gqng__)`,
+            backgroundImage: `url(/hero-bg.png)`,
           }}
         />
         <div className="absolute inset-0 bg-gradient-to-b from-background/70 via-background/50 to-background" />
