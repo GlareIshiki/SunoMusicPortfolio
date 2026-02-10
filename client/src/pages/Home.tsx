@@ -101,7 +101,7 @@ export default function Home() {
               <motion.div
                 className="relative"
                 animate={{ rotate: 360 }}
-                transition={{ duration: 60, repeat: Infinity, ease: "linear" }}
+                transition={{ duration: 120, repeat: Infinity, ease: "linear" }}
               >
                 <img
                   src="/emblem.png"
