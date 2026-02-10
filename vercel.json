@@ -3,8 +3,15 @@
   "buildCommand": "pnpm vite build",
   "outputDirectory": "dist/public",
   "framework": null,
+  "functions": {
+    "api/**/*.ts": {
+      "maxDuration": 10
+    }
+  },
   "rewrites": [
-    { "source": "/api/(.*)", "destination": "/api/$1" },
-    { "source": "/(.*)", "destination": "/index.html" }
+    { "source": "/song/:path*", "destination": "/index.html" },
+    { "source": "/playlist/:path*", "destination": "/index.html" },
+    { "source": "/playlists", "destination": "/index.html" },
+    { "source": "/404", "destination": "/index.html" }
   ]
 }
