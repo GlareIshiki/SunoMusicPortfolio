@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Save, Upload, Link2, X, Plus, Loader2, Eye, EyeOff } from 'lucide-react';
+import { Save, Upload, Link2, X, Plus, Loader2, Eye, EyeOff, Pin, PinOff } from 'lucide-react';
 import {
   Sheet,
   SheetContent,
@@ -46,6 +46,7 @@ export function SongEditSheet({ song, open, onOpenChange, onSaved }: SongEditShe
     isCover: false,
     originalUrl: '',
     visible: true,
+    pinned: false,
   });
   const [newTag, setNewTag] = useState('');
   const [saving, setSaving] = useState(false);
@@ -65,6 +66,7 @@ export function SongEditSheet({ song, open, onOpenChange, onSaved }: SongEditShe
         isCover: song.isCover,
         originalUrl: song.originalUrl || '',
         visible: song.visible,
+        pinned: song.pinned,
       });
       setCoverPreview(song.coverUrl);
     }
@@ -111,6 +113,7 @@ export function SongEditSheet({ song, open, onOpenChange, onSaved }: SongEditShe
         isCover: form.isCover,
         originalUrl: form.isCover ? form.originalUrl || undefined : undefined,
         visible: form.visible,
+        pinned: form.pinned,
       });
       toast.success('Song updated');
       onSaved();
@@ -302,6 +305,24 @@ export function SongEditSheet({ song, open, onOpenChange, onSaved }: SongEditShe
             <Switch
               checked={form.visible}
               onCheckedChange={v => setForm(f => ({ ...f, visible: v }))}
+            />
+          </div>
+
+          {/* Pinned */}
+          <div className="flex items-center justify-between rounded-lg border border-primary/20 p-3">
+            <div className="flex items-center gap-2">
+              {form.pinned ? (
+                <Pin className="w-4 h-4 text-primary" />
+              ) : (
+                <PinOff className="w-4 h-4 text-muted-foreground" />
+              )}
+              <Label className="font-display text-sm">
+                {form.pinned ? 'Pinned to showcase' : 'Not pinned'}
+              </Label>
+            </div>
+            <Switch
+              checked={form.pinned}
+              onCheckedChange={v => setForm(f => ({ ...f, pinned: v }))}
             />
           </div>
         </div>

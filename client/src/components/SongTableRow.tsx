@@ -1,5 +1,5 @@
 import { Link } from 'wouter';
-import { Play, Pause, Eye, EyeOff } from 'lucide-react';
+import { Play, Pause, Eye, EyeOff, Pin, PinOff } from 'lucide-react';
 import { usePlayer } from '@/contexts/PlayerContext';
 import { useAdmin } from '@/contexts/AdminContext';
 import { updateSong } from '@/lib/api';
@@ -41,6 +41,18 @@ export function SongTableRow({ song, index, queue, onVisibilityChange }: SongTab
     }
   };
 
+  const handleTogglePin = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    try {
+      await updateSong(song.id, { pinned: !song.pinned });
+      toast.success(song.pinned ? 'Unpinned' : 'Pinned');
+      onVisibilityChange?.();
+    } catch {
+      toast.error('Failed to update pin');
+    }
+  };
+
   const handleRowClick = () => {
     if (isCurrentSong) {
       togglePlay();
@@ -55,7 +67,7 @@ export function SongTableRow({ song, index, queue, onVisibilityChange }: SongTab
       className={cn(
         'group grid gap-3 items-center px-4 py-2 rounded-lg transition-colors duration-200 cursor-pointer',
         isAdmin
-          ? 'grid-cols-[2rem_2.5rem_1fr_3rem] md:grid-cols-[2rem_2.5rem_2fr_1fr_1fr_3.5rem]'
+          ? 'grid-cols-[2rem_2rem_2.5rem_1fr_3rem] md:grid-cols-[2rem_2rem_2.5rem_2fr_1fr_1fr_3.5rem]'
           : 'grid-cols-[2.5rem_1fr_3rem] md:grid-cols-[2.5rem_2fr_1fr_1fr_3.5rem]',
         isCurrentSong
           ? 'bg-primary/10'
@@ -73,6 +85,19 @@ export function SongTableRow({ song, index, queue, onVisibilityChange }: SongTab
             <Eye className="w-3.5 h-3.5 text-primary" />
           ) : (
             <EyeOff className="w-3.5 h-3.5 text-muted-foreground" />
+          )}
+        </button>
+      )}
+      {/* Admin pin toggle */}
+      {isAdmin && (
+        <button
+          onClick={handleTogglePin}
+          className="flex items-center justify-center w-6 h-6 rounded-full hover:bg-muted transition-colors"
+        >
+          {song.pinned ? (
+            <Pin className="w-3.5 h-3.5 text-primary" />
+          ) : (
+            <PinOff className="w-3.5 h-3.5 text-muted-foreground" />
           )}
         </button>
       )}

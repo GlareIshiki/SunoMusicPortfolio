@@ -2,7 +2,7 @@
 
 import { Link, useLocation } from 'wouter';
 import { motion } from 'framer-motion';
-import { Music2, Home, ListMusic, Moon, Sun, KeyRound, LogOut } from 'lucide-react';
+import { Music2, Home, ListMusic, BookOpen, Moon, Sun, KeyRound, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useAdmin } from '@/contexts/AdminContext';
@@ -16,6 +16,7 @@ export function Header() {
   
   const navItems = [
     { href: '/', label: 'Archive', icon: Home },
+    { href: '/characters', label: 'Characters', icon: BookOpen },
     { href: '/playlists', label: 'Collections', icon: ListMusic },
   ];
   

@@ -2,7 +2,8 @@
 
 import { useState, useMemo, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Search, Grid3x3, List, Sparkles, Clock, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react';
+import { Search, Grid3x3, List, Sparkles, Clock, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Pin } from 'lucide-react';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import {
@@ -25,6 +26,7 @@ type SortBy = 'newest' | 'oldest' | 'title' | 'artist' | 'duration';
 const SONGS_PER_PAGE = 40;
 
 export default function Home() {
+  const [activeTab, setActiveTab] = useState<'pinned' | 'all'>('pinned');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedGenre, setSelectedGenre] = useState('all');
   const [sortBy, setSortBy] = useState<SortBy>('title');
@@ -40,6 +42,7 @@ export default function Home() {
     search: debouncedSearch,
     genre: selectedGenre,
     sort: sortBy,
+    pinned: activeTab === 'pinned' ? true : undefined,
   });
 
   // Load genres on mount
@@ -52,7 +55,7 @@ export default function Home() {
   // Reset pagination when filters change
   useEffect(() => {
     setPage(1);
-  }, [debouncedSearch, selectedGenre, sortBy]);
+  }, [debouncedSearch, selectedGenre, sortBy, activeTab]);
 
   const safePage = Math.min(page, Math.max(1, totalPages));
 
@@ -154,6 +157,22 @@ export default function Home() {
             </motion.div>
           </motion.div>
         </div>
+      </section>
+
+      {/* Tab Switch */}
+      <section className="container mb-6">
+        <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'pinned' | 'all')}>
+          <TabsList className="bg-card/80 border border-primary/20 backdrop-blur-sm">
+            <TabsTrigger value="pinned" className="font-display text-sm data-[state=active]:bg-primary/20 data-[state=active]:text-primary gap-2">
+              <Pin className="w-4 h-4" />
+              ピン
+            </TabsTrigger>
+            <TabsTrigger value="all" className="font-display text-sm data-[state=active]:bg-primary/20 data-[state=active]:text-primary gap-2">
+              <Sparkles className="w-4 h-4" />
+              すべて
+            </TabsTrigger>
+          </TabsList>
+        </Tabs>
       </section>
 
       {/* Filters and Controls */}

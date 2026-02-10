@@ -1,4 +1,4 @@
-import type { Song, Playlist } from '../../shared/types';
+import type { Song, Playlist, Character, CharacterSection } from '../../shared/types';
 
 interface SongRow {
   id: string;
@@ -14,6 +14,7 @@ interface SongRow {
   created_at: string;
   duration: number;
   visible: boolean;
+  pinned: boolean;
 }
 
 interface PlaylistRow {
@@ -41,6 +42,7 @@ export function songRowToSong(row: SongRow): Song {
     createdAt: row.created_at,
     duration: row.duration,
     visible: row.visible,
+    pinned: row.pinned,
   };
 }
 
@@ -56,6 +58,7 @@ export function songToRow(song: Partial<Song>): Record<string, unknown> {
   if (song.isCover !== undefined) row.is_cover = song.isCover;
   if (song.originalUrl !== undefined) row.original_url = song.originalUrl;
   if (song.visible !== undefined) row.visible = song.visible;
+  if (song.pinned !== undefined) row.pinned = song.pinned;
   return row;
 }
 
@@ -69,4 +72,43 @@ export function playlistRowToPlaylist(row: PlaylistRow): Playlist {
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
+}
+
+// --- Character mappers ---
+
+interface CharacterRow {
+  id: string;
+  name: string;
+  subtitle: string;
+  cover_url: string;
+  sections: CharacterSection[];
+  sort_order: number;
+  visible: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export function characterRowToCharacter(row: CharacterRow): Character {
+  return {
+    id: row.id,
+    name: row.name,
+    subtitle: row.subtitle,
+    coverUrl: row.cover_url,
+    sections: row.sections ?? [],
+    sortOrder: row.sort_order,
+    visible: row.visible,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
+}
+
+export function characterToRow(char: Partial<Character>): Record<string, unknown> {
+  const row: Record<string, unknown> = {};
+  if (char.name !== undefined) row.name = char.name;
+  if (char.subtitle !== undefined) row.subtitle = char.subtitle;
+  if (char.coverUrl !== undefined) row.cover_url = char.coverUrl;
+  if (char.sections !== undefined) row.sections = char.sections;
+  if (char.sortOrder !== undefined) row.sort_order = char.sortOrder;
+  if (char.visible !== undefined) row.visible = char.visible;
+  return row;
 }

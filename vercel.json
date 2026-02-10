@@ -12,6 +12,8 @@
     { "source": "/song/:path*", "destination": "/index.html" },
     { "source": "/playlist/:path*", "destination": "/index.html" },
     { "source": "/playlists", "destination": "/index.html" },
+    { "source": "/character/:path*", "destination": "/index.html" },
+    { "source": "/characters", "destination": "/index.html" },
     { "source": "/404", "destination": "/index.html" }
   ]
 }

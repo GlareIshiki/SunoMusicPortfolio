@@ -1,62 +1,51 @@
 import { useState, useEffect, useCallback } from 'react';
-import type { Song } from '@/../../shared/types';
-import { fetchSongs, fetchSongById } from '@/lib/api';
-import type { FetchSongsParams, PaginatedSongs } from '@/lib/api';
+import type { Character } from '@/../../shared/types';
+import { fetchCharacters, fetchCharacterById } from '@/lib/api';
 
-interface UseSongsResult {
-  songs: Song[];
-  total: number;
-  page: number;
-  totalPages: number;
+interface UseCharactersResult {
+  characters: Character[];
   isLoading: boolean;
   error: string | null;
   refetch: () => void;
 }
 
-export function useSongs(params: FetchSongsParams = {}): UseSongsResult {
-  const [data, setData] = useState<PaginatedSongs>({
-    songs: [],
-    total: 0,
-    page: 1,
-    totalPages: 1,
-  });
+export function useCharacters(): UseCharactersResult {
+  const [characters, setCharacters] = useState<Character[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
-  const { page, limit, search, genre, sort, pinned } = params;
 
   const refetch = useCallback(() => {
     setIsLoading(true);
     setError(null);
-    fetchSongs({ page, limit, search, genre, sort, pinned })
-      .then(setData)
+    fetchCharacters()
+      .then(setCharacters)
       .catch(e => setError(e.message))
       .finally(() => setIsLoading(false));
-  }, [page, limit, search, genre, sort, pinned]);
+  }, []);
 
   useEffect(() => {
     refetch();
   }, [refetch]);
 
-  return { ...data, isLoading, error, refetch };
+  return { characters, isLoading, error, refetch };
 }
 
-interface UseSongResult {
-  song: Song | null;
+interface UseCharacterResult {
+  character: Character | null;
   isLoading: boolean;
   error: string | null;
   refetch: () => void;
 }
 
-export function useSong(id: string | undefined): UseSongResult {
-  const [song, setSong] = useState<Song | null>(null);
+export function useCharacter(id: string | undefined): UseCharacterResult {
+  const [character, setCharacter] = useState<Character | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [fetchKey, setFetchKey] = useState(0);
 
   useEffect(() => {
     if (!id) {
-      setSong(null);
+      setCharacter(null);
       setIsLoading(false);
       return;
     }
@@ -71,15 +60,13 @@ export function useSong(id: string | undefined): UseSongResult {
       for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
         if (cancelled) return;
         try {
-          const data = await fetchSongById(id!, controller.signal);
+          const data = await fetchCharacterById(id!, controller.signal);
           if (cancelled) return;
-          // If null (404) on first attempts, retry after short delay
-          // (transient Vercel cold-start errors can masquerade as 404)
           if (!data && attempt < MAX_RETRIES) {
             await new Promise(r => setTimeout(r, 500));
             continue;
           }
-          setSong(data);
+          setCharacter(data);
           setIsLoading(false);
           return;
         } catch (e: unknown) {
@@ -108,5 +95,5 @@ export function useSong(id: string | undefined): UseSongResult {
     setFetchKey(k => k + 1);
   }, []);
 
-  return { song, isLoading, error, refetch };
+  return { character, isLoading, error, refetch };
 }

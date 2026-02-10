@@ -25,6 +25,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       query = query.eq('visible', true);
     }
 
+    // Pinned filter
+    const pinnedFilter = (req.query as Record<string, string>).pinned;
+    if (pinnedFilter === 'true') {
+      query = query.eq('pinned', true);
+    }
+
     // Search: title or artist
     if (search) {
       query = query.or(`title.ilike.%${search}%,artist.ilike.%${search}%`);

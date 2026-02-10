@@ -1,4 +1,4 @@
-import type { Song, Playlist } from '@/../../shared/types';
+import type { Song, Playlist, Character } from '@/../../shared/types';
 
 const API_BASE = '';
 
@@ -39,6 +39,7 @@ export interface FetchSongsParams {
   search?: string;
   genre?: string;
   sort?: string;
+  pinned?: boolean;
 }
 
 export async function fetchSongs(params: FetchSongsParams = {}): Promise<PaginatedSongs> {
@@ -48,6 +49,7 @@ export async function fetchSongs(params: FetchSongsParams = {}): Promise<Paginat
   if (params.search) sp.set('search', params.search);
   if (params.genre && params.genre !== 'all') sp.set('genre', params.genre);
   if (params.sort) sp.set('sort', params.sort);
+  if (params.pinned !== undefined) sp.set('pinned', params.pinned.toString());
 
   const qs = sp.toString();
   const url = `${API_BASE}/api/songs${qs ? `?${qs}` : ''}`;
@@ -130,4 +132,58 @@ export async function fetchPlaylists(): Promise<Playlist[]> {
   const res = await fetch(`${API_BASE}/api/playlists`);
   if (!res.ok) throw new Error('Failed to fetch playlists');
   return res.json();
+}
+
+// --- Songs batch ---
+
+export async function fetchSongsByIds(ids: string[]): Promise<Song[]> {
+  if (ids.length === 0) return [];
+  const res = await fetch(`${API_BASE}/api/songs/batch?ids=${ids.join(',')}`, {
+    headers: authHeaders(),
+  });
+  if (!res.ok) throw new Error('Failed to fetch songs batch');
+  return res.json();
+}
+
+// --- Characters ---
+
+export async function fetchCharacters(): Promise<Character[]> {
+  const res = await fetch(`${API_BASE}/api/characters`, { headers: authHeaders() });
+  if (!res.ok) throw new Error('Failed to fetch characters');
+  return res.json();
+}
+
+export async function fetchCharacterById(id: string, signal?: AbortSignal): Promise<Character | null> {
+  const res = await fetch(`${API_BASE}/api/characters/${id}`, { headers: authHeaders(), signal });
+  if (res.status === 404) return null;
+  if (!res.ok) throw new Error('Failed to fetch character');
+  return res.json();
+}
+
+export async function createCharacter(data: Partial<Character>): Promise<Character> {
+  const res = await fetch(`${API_BASE}/api/characters`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...authHeaders() },
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) throw new Error('Failed to create character');
+  return res.json();
+}
+
+export async function updateCharacter(id: string, updates: Partial<Character>): Promise<Character> {
+  const res = await fetch(`${API_BASE}/api/characters/${id}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...authHeaders() },
+    body: JSON.stringify(updates),
+  });
+  if (!res.ok) throw new Error('Failed to update character');
+  return res.json();
+}
+
+export async function deleteCharacter(id: string): Promise<void> {
+  const res = await fetch(`${API_BASE}/api/characters/${id}`, {
+    method: 'DELETE',
+    headers: authHeaders(),
+  });
+  if (!res.ok) throw new Error('Failed to delete character');
 }

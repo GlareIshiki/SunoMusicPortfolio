@@ -64,6 +64,7 @@ function generateSong(id: number): Song {
     createdAt: date.toISOString().split('T')[0],
     duration,
     visible: true,
+    pinned: false,
   };
 }
 

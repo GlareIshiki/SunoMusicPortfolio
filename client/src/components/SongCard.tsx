@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion';
 import { Link } from 'wouter';
-import { Play, Pause, Clock, Calendar, Sparkles, Eye, EyeOff } from 'lucide-react';
+import { Play, Pause, Clock, Calendar, Sparkles, Eye, EyeOff, Pin, PinOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { usePlayer } from '@/contexts/PlayerContext';
@@ -43,6 +43,18 @@ export function SongCard({ song, index, onVisibilityChange }: SongCardProps) {
       onVisibilityChange?.();
     } catch {
       toast.error('Failed to update visibility');
+    }
+  };
+
+  const handleTogglePin = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    try {
+      await updateSong(song.id, { pinned: !song.pinned });
+      toast.success(song.pinned ? 'Unpinned' : 'Pinned');
+      onVisibilityChange?.();
+    } catch {
+      toast.error('Failed to update pin');
     }
   };
 
@@ -116,6 +128,20 @@ export function SongCard({ song, index, onVisibilityChange }: SongCardProps) {
                   <Eye className="w-4 h-4 text-primary" />
                 ) : (
                   <EyeOff className="w-4 h-4 text-muted-foreground" />
+                )}
+              </button>
+            )}
+
+            {/* Admin pin toggle */}
+            {isAdmin && (
+              <button
+                onClick={handleTogglePin}
+                className="absolute bottom-3 left-3 z-10 w-8 h-8 rounded-full bg-card/80 backdrop-blur-sm flex items-center justify-center border border-primary/30 hover:gold-glow transition-all"
+              >
+                {song.pinned ? (
+                  <Pin className="w-4 h-4 text-primary" />
+                ) : (
+                  <PinOff className="w-4 h-4 text-muted-foreground" />
                 )}
               </button>
             )}

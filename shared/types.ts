@@ -14,6 +14,23 @@ export interface Song {
   createdAt: string;
   duration: number; // in seconds
   visible: boolean;
+  pinned: boolean;
+}
+
+export type CharacterSection =
+  | { type: 'text'; content: string }
+  | { type: 'songs'; songIds: string[] };
+
+export interface Character {
+  id: string;
+  name: string;
+  subtitle: string;
+  coverUrl: string;
+  sections: CharacterSection[];
+  sortOrder: number;
+  visible: boolean;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface Playlist {

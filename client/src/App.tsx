@@ -16,6 +16,8 @@ import Home from "./pages/Home";
 import SongDetail from "./pages/SongDetail";
 import Playlists from "./pages/Playlists";
 import PlaylistDetail from "./pages/PlaylistDetail";
+import Characters from "./pages/Characters";
+import CharacterDetail from "./pages/CharacterDetail";
 
 function Router() {
   return (
@@ -26,6 +28,8 @@ function Router() {
         <Route path={"/song/:id"} component={SongDetail} />
         <Route path="/playlists" component={Playlists} />
         <Route path="/playlist/:id" component={PlaylistDetail} />
+        <Route path="/characters" component={Characters} />
+        <Route path="/character/:id" component={CharacterDetail} />
         <Route path={"/404"} component={NotFound} />
         {/* Final fallback route */}
         <Route component={NotFound} />
