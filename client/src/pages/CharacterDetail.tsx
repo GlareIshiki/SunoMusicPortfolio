@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRoute, Link } from 'wouter';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Play, BookOpen, Pencil, Sparkles, Music2 } from 'lucide-react';
+import { ArrowLeft, Play, BookOpen, Pencil, Sparkles, Music2, ImageIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { SongCard } from '@/components/SongCard';
 import { usePlayer } from '@/contexts/PlayerContext';
@@ -195,7 +195,7 @@ export default function CharacterDetail() {
       <section className="container">
         <div className="max-w-5xl mx-auto space-y-16">
           {character.sections.map((section, index) => {
-            const align = section.type === 'text' ? (section.align || 'center') : 'center';
+            const align = (section.type === 'text' || section.type === 'image') ? (section.align || 'center') : 'center';
 
             // Animation direction based on alignment
             const motionProps = {
@@ -208,7 +208,7 @@ export default function CharacterDetail() {
               transition: { duration: 0.8, delay: index * 0.08, ease: [0.25, 0.46, 0.45, 0.94] as const },
             };
 
-            // Text section alignment classes
+            // Alignment classes for text and image sections
             const alignClasses: Record<TextAlign, string> = {
               left: 'md:w-[65%] md:mr-auto',
               right: 'md:w-[65%] md:ml-auto',
@@ -240,12 +240,30 @@ export default function CharacterDetail() {
                           </span>
                         </div>
                       )}
-                      <div className={`ornate-card elegant-shadow ${align === 'right' ? 'border-r-2 border-r-primary/30' : align === 'left' ? 'border-l-2 border-l-primary/30' : ''}`}>
-                        <div className="ornate-card-inner">
-                          <p className={`font-elegant text-lg leading-relaxed text-muted-foreground whitespace-pre-wrap ${align === 'right' ? 'text-right' : align === 'center' ? 'text-center' : ''}`}>
-                            {section.content}
-                          </p>
+                      {section.frame === false ? (
+                        /* Frameless text */
+                        <p className={`font-elegant text-lg leading-relaxed text-muted-foreground whitespace-pre-wrap ${align === 'right' ? 'text-right' : align === 'center' ? 'text-center' : ''}`}>
+                          {section.content}
+                        </p>
+                      ) : (
+                        /* Framed text (default) */
+                        <div className={`ornate-card elegant-shadow ${align === 'right' ? 'border-r-2 border-r-primary/30' : align === 'left' ? 'border-l-2 border-l-primary/30' : ''}`}>
+                          <div className="ornate-card-inner">
+                            <p className={`font-elegant text-lg leading-relaxed text-muted-foreground whitespace-pre-wrap ${align === 'right' ? 'text-right' : align === 'center' ? 'text-center' : ''}`}>
+                              {section.content}
+                            </p>
+                          </div>
                         </div>
+                      )}
+                    </div>
+                  ) : section.type === 'image' ? (
+                    <div className={alignClasses[align]}>
+                      <div className="rounded-xl overflow-hidden elegant-shadow">
+                        <img
+                          src={section.url}
+                          alt={section.alt || ''}
+                          className="w-full h-auto object-cover"
+                        />
                       </div>
                     </div>
                   ) : (

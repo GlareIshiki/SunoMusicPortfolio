@@ -20,8 +20,9 @@ export interface Song {
 export type TextAlign = 'left' | 'right' | 'center' | 'full';
 
 export type CharacterSection =
-  | { type: 'text'; content: string; align?: TextAlign }
-  | { type: 'songs'; songIds: string[] };
+  | { type: 'text'; content: string; align?: TextAlign; frame?: boolean }
+  | { type: 'songs'; songIds: string[] }
+  | { type: 'image'; url: string; alt?: string; align?: TextAlign };
 
 export interface Character {
   id: string;

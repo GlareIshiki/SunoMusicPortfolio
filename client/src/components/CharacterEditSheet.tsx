@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Save, Upload, Link2, X, Plus, Loader2, Eye, EyeOff, ChevronUp, ChevronDown, Type, Music2, Search, Trash2, AlignLeft, AlignCenter, AlignRight, AlignJustify } from 'lucide-react';
+import { Save, Upload, Link2, X, Plus, Loader2, Eye, EyeOff, ChevronUp, ChevronDown, Type, Music2, Search, Trash2, AlignLeft, AlignCenter, AlignRight, AlignJustify, ImageIcon, Frame } from 'lucide-react';
 import {
   Sheet,
   SheetContent,
@@ -114,13 +114,14 @@ export function CharacterEditSheet({ character, open, onOpenChange, onSaved }: C
   };
 
   // Section manipulation
-  const addSection = (type: 'text' | 'songs') => {
+  const addSection = (type: 'text' | 'songs' | 'image') => {
+    const newSection: CharacterSection =
+      type === 'text' ? { type: 'text', content: '', align: 'center' as TextAlign, frame: true }
+      : type === 'image' ? { type: 'image', url: '', align: 'center' as TextAlign }
+      : { type: 'songs', songIds: [] };
     setForm(f => ({
       ...f,
-      sections: [
-        ...f.sections,
-        type === 'text' ? { type: 'text', content: '', align: 'center' as TextAlign } : { type: 'songs', songIds: [] },
-      ],
+      sections: [...f.sections, newSection],
     }));
   };
 
@@ -145,8 +146,8 @@ export function CharacterEditSheet({ character, open, onOpenChange, onSaved }: C
     setForm(f => {
       const arr = [...f.sections];
       const existing = arr[index];
-      const align = existing.type === 'text' ? existing.align : 'center';
-      arr[index] = { type: 'text', content, align };
+      if (existing.type !== 'text') return f;
+      arr[index] = { ...existing, content };
       return { ...f, sections: arr };
     });
   };
@@ -155,8 +156,39 @@ export function CharacterEditSheet({ character, open, onOpenChange, onSaved }: C
     setForm(f => {
       const arr = [...f.sections];
       const existing = arr[index];
+      if (existing.type === 'text' || existing.type === 'image') {
+        arr[index] = { ...existing, align };
+      }
+      return { ...f, sections: arr };
+    });
+  };
+
+  const updateTextFrame = (index: number, frame: boolean) => {
+    setForm(f => {
+      const arr = [...f.sections];
+      const existing = arr[index];
       if (existing.type !== 'text') return f;
-      arr[index] = { ...existing, align };
+      arr[index] = { ...existing, frame };
+      return { ...f, sections: arr };
+    });
+  };
+
+  const updateImageUrl = (index: number, url: string) => {
+    setForm(f => {
+      const arr = [...f.sections];
+      const existing = arr[index];
+      if (existing.type !== 'image') return f;
+      arr[index] = { ...existing, url };
+      return { ...f, sections: arr };
+    });
+  };
+
+  const updateImageAlt = (index: number, alt: string) => {
+    setForm(f => {
+      const arr = [...f.sections];
+      const existing = arr[index];
+      if (existing.type !== 'image') return f;
+      arr[index] = { ...existing, alt };
       return { ...f, sections: arr };
     });
   };
@@ -309,8 +341,10 @@ export function CharacterEditSheet({ character, open, onOpenChange, onSaved }: C
                   <Badge variant="outline" className="font-mono text-xs">
                     {section.type === 'text' ? (
                       <><Type className="w-3 h-3 mr-1" /> Text</>
+                    ) : section.type === 'image' ? (
+                      <><ImageIcon className="w-3 h-3 mr-1" /> Image</>
                     ) : (
-                      <><Music2 className="w-3 h-3 mr-1" /> Songs ({section.type === 'songs' ? section.songIds.length : 0})</>
+                      <><Music2 className="w-3 h-3 mr-1" /> Songs ({section.songIds.length})</>
                     )}
                   </Badge>
                   <div className="flex items-center gap-1">
@@ -328,6 +362,47 @@ export function CharacterEditSheet({ character, open, onOpenChange, onSaved }: C
 
                 {/* Section content */}
                 {section.type === 'text' ? (
+                  <div className="space-y-2">
+                    {/* Alignment + frame controls */}
+                    <div className="flex items-center gap-1 flex-wrap">
+                      <span className="text-xs text-muted-foreground font-elegant mr-1">Align:</span>
+                      {([
+                        { value: 'left' as TextAlign, icon: AlignLeft, label: 'Left' },
+                        { value: 'center' as TextAlign, icon: AlignCenter, label: 'Center' },
+                        { value: 'right' as TextAlign, icon: AlignRight, label: 'Right' },
+                        { value: 'full' as TextAlign, icon: AlignJustify, label: 'Full' },
+                      ] as const).map(({ value, icon: Icon, label }) => (
+                        <Button
+                          key={value}
+                          variant={(section.align || 'center') === value ? 'default' : 'ghost'}
+                          size="icon"
+                          className="h-7 w-7"
+                          onClick={() => updateTextAlign(idx, value)}
+                          title={label}
+                        >
+                          <Icon className="w-3.5 h-3.5" />
+                        </Button>
+                      ))}
+                      <div className="w-px h-5 bg-border/50 mx-1" />
+                      <Button
+                        variant={section.frame !== false ? 'default' : 'ghost'}
+                        size="icon"
+                        className="h-7 w-7"
+                        onClick={() => updateTextFrame(idx, section.frame === false)}
+                        title={section.frame !== false ? 'Framed' : 'Frameless'}
+                      >
+                        <Frame className="w-3.5 h-3.5" />
+                      </Button>
+                    </div>
+                    <Textarea
+                      value={section.content}
+                      onChange={e => updateTextContent(idx, e.target.value)}
+                      rows={4}
+                      className="font-elegant text-sm"
+                      placeholder="Story text..."
+                    />
+                  </div>
+                ) : section.type === 'image' ? (
                   <div className="space-y-2">
                     {/* Alignment selector */}
                     <div className="flex items-center gap-1">
@@ -350,13 +425,51 @@ export function CharacterEditSheet({ character, open, onOpenChange, onSaved }: C
                         </Button>
                       ))}
                     </div>
-                    <Textarea
-                      value={section.content}
-                      onChange={e => updateTextContent(idx, e.target.value)}
-                      rows={4}
+                    {/* Image URL */}
+                    <Input
+                      value={section.url}
+                      onChange={e => updateImageUrl(idx, e.target.value)}
+                      placeholder="https://... image URL"
                       className="font-elegant text-sm"
-                      placeholder="Story text..."
                     />
+                    {/* Alt text */}
+                    <Input
+                      value={section.alt || ''}
+                      onChange={e => updateImageAlt(idx, e.target.value)}
+                      placeholder="Alt text (optional)"
+                      className="font-elegant text-xs"
+                    />
+                    {/* Image upload */}
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="text-xs w-full"
+                      onClick={() => {
+                        const input = document.createElement('input');
+                        input.type = 'file';
+                        input.accept = 'image/*';
+                        input.onchange = async (ev) => {
+                          const file = (ev.target as HTMLInputElement).files?.[0];
+                          if (!file) return;
+                          try {
+                            const url = await uploadCover(file);
+                            updateImageUrl(idx, url);
+                            toast.success('Image uploaded');
+                          } catch {
+                            toast.error('Upload failed');
+                          }
+                        };
+                        input.click();
+                      }}
+                    >
+                      <Upload className="w-3 h-3 mr-1" /> Upload Image
+                    </Button>
+                    {/* Preview */}
+                    {section.url && (
+                      <div className="rounded-lg overflow-hidden border border-border/30">
+                        <img src={section.url} alt={section.alt || ''} className="w-full h-auto max-h-40 object-cover" />
+                      </div>
+                    )}
                   </div>
                 ) : (
                   <div className="space-y-2">
@@ -426,10 +539,13 @@ export function CharacterEditSheet({ character, open, onOpenChange, onSaved }: C
             {/* Add section buttons */}
             <div className="flex gap-2">
               <Button variant="outline" size="sm" className="flex-1 text-xs" onClick={() => addSection('text')}>
-                <Type className="w-3 h-3 mr-1" /> Add Text
+                <Type className="w-3 h-3 mr-1" /> Text
+              </Button>
+              <Button variant="outline" size="sm" className="flex-1 text-xs" onClick={() => addSection('image')}>
+                <ImageIcon className="w-3 h-3 mr-1" /> Image
               </Button>
               <Button variant="outline" size="sm" className="flex-1 text-xs" onClick={() => addSection('songs')}>
-                <Music2 className="w-3 h-3 mr-1" /> Add Songs
+                <Music2 className="w-3 h-3 mr-1" /> Songs
               </Button>
             </div>
           </div>
