@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Save, Upload, Link2, X, Plus, Loader2, Eye, EyeOff, Pin, PinOff } from 'lucide-react';
+import { Save, Upload, Link2, X, Plus, Loader2, Eye, EyeOff, Pin, PinOff, Undo2 } from 'lucide-react';
 import {
   Sheet,
   SheetContent,
@@ -47,6 +47,7 @@ export function SongEditSheet({ song, open, onOpenChange, onSaved }: SongEditShe
     originalUrl: '',
     visible: true,
     pinned: false,
+    originalCoverUrl: '',
   });
   const [newTag, setNewTag] = useState('');
   const [saving, setSaving] = useState(false);
@@ -67,6 +68,7 @@ export function SongEditSheet({ song, open, onOpenChange, onSaved }: SongEditShe
         originalUrl: song.originalUrl || '',
         visible: song.visible,
         pinned: song.pinned,
+        originalCoverUrl: song.originalCoverUrl || '',
       });
       setCoverPreview(song.coverUrl);
     }
@@ -100,9 +102,23 @@ export function SongEditSheet({ song, open, onOpenChange, onSaved }: SongEditShe
     }
   };
 
+  const handleRestoreCover = () => {
+    if (form.originalCoverUrl) {
+      setForm(f => ({ ...f, coverUrl: f.originalCoverUrl }));
+      setCoverPreview(form.originalCoverUrl);
+      toast.info('Cover restored to original');
+    }
+  };
+
   const handleSave = async () => {
     setSaving(true);
     try {
+      // If cover changed and no original saved yet, save the original
+      const coverChanged = form.coverUrl !== song.coverUrl;
+      const originalCoverUrl = coverChanged && !form.originalCoverUrl
+        ? song.coverUrl
+        : form.originalCoverUrl || undefined;
+
       await updateSong(song.id, {
         title: form.title,
         artist: form.artist,
@@ -114,6 +130,7 @@ export function SongEditSheet({ song, open, onOpenChange, onSaved }: SongEditShe
         originalUrl: form.isCover ? form.originalUrl || undefined : undefined,
         visible: form.visible,
         pinned: form.pinned,
+        originalCoverUrl,
       });
       toast.success('Song updated');
       onSaved();
@@ -218,11 +235,30 @@ export function SongEditSheet({ song, open, onOpenChange, onSaved }: SongEditShe
           {/* Cover Image */}
           <div className="space-y-2">
             <Label className="font-display text-xs text-muted-foreground tracking-wider">COVER IMAGE</Label>
-            {coverPreview && (
-              <div className="w-32 h-32 rounded-lg overflow-hidden ornate-border mb-2">
-                <img src={coverPreview} alt="Cover preview" className="w-full h-full object-cover" />
-              </div>
-            )}
+            <div className="flex items-start gap-3">
+              {coverPreview && (
+                <div className="w-32 h-32 rounded-lg overflow-hidden ornate-border shrink-0">
+                  <img src={coverPreview} alt="Cover preview" className="w-full h-full object-cover" />
+                </div>
+              )}
+              {/* Original cover thumbnail + restore button */}
+              {form.originalCoverUrl && form.originalCoverUrl !== form.coverUrl && (
+                <div className="flex flex-col items-center gap-1">
+                  <div className="w-16 h-16 rounded-lg overflow-hidden border border-border/50 opacity-60">
+                    <img src={form.originalCoverUrl} alt="Original cover" className="w-full h-full object-cover" />
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="text-xs h-6 px-2 text-primary"
+                    onClick={handleRestoreCover}
+                  >
+                    <Undo2 className="w-3 h-3 mr-1" />
+                    戻す
+                  </Button>
+                </div>
+              )}
+            </div>
             <Tabs defaultValue="url" className="w-full">
               <TabsList className="grid w-full grid-cols-2">
                 <TabsTrigger value="url" className="font-elegant text-xs">

@@ -15,6 +15,7 @@ interface SongRow {
   duration: number;
   visible: boolean;
   pinned: boolean;
+  original_cover_url: string | null;
 }
 
 interface PlaylistRow {
@@ -43,6 +44,7 @@ export function songRowToSong(row: SongRow): Song {
     duration: row.duration,
     visible: row.visible,
     pinned: row.pinned,
+    originalCoverUrl: row.original_cover_url ?? undefined,
   };
 }
 
@@ -59,6 +61,7 @@ export function songToRow(song: Partial<Song>): Record<string, unknown> {
   if (song.originalUrl !== undefined) row.original_url = song.originalUrl;
   if (song.visible !== undefined) row.visible = song.visible;
   if (song.pinned !== undefined) row.pinned = song.pinned;
+  if (song.originalCoverUrl !== undefined) row.original_cover_url = song.originalCoverUrl;
   return row;
 }
 

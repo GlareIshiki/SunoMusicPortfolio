@@ -15,6 +15,7 @@ export interface Song {
   duration: number; // in seconds
   visible: boolean;
   pinned: boolean;
+  originalCoverUrl?: string;
 }
 
 export type TextAlign = 'left' | 'right' | 'center' | 'full';

@@ -14,7 +14,8 @@ CREATE TABLE songs (
   created_at TEXT NOT NULL,
   duration INTEGER NOT NULL DEFAULT 0,
   visible BOOLEAN NOT NULL DEFAULT TRUE,
-  pinned BOOLEAN NOT NULL DEFAULT FALSE
+  pinned BOOLEAN NOT NULL DEFAULT FALSE,
+  original_cover_url TEXT
 );
 
 CREATE INDEX idx_songs_visible ON songs (visible);
