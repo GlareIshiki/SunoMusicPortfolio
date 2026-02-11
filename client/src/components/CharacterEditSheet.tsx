@@ -17,7 +17,7 @@ import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { updateCharacter, uploadCover, fetchSongs } from '@/lib/api';
 import { toast } from 'sonner';
-import type { Character, CharacterSection, Song, TextAlign } from '@/../../shared/types';
+import type { Character, CharacterSection, Song, TextAlign, CardSize } from '@/../../shared/types';
 
 interface CharacterEditSheetProps {
   character: Character;
@@ -179,6 +179,16 @@ export function CharacterEditSheet({ character, open, onOpenChange, onSaved }: C
       const existing = arr[index];
       if (existing.type !== 'image') return f;
       arr[index] = { ...existing, url };
+      return { ...f, sections: arr };
+    });
+  };
+
+  const updateSongsCardSize = (index: number, cardSize: CardSize) => {
+    setForm(f => {
+      const arr = [...f.sections];
+      const existing = arr[index];
+      if (existing.type !== 'songs') return f;
+      arr[index] = { ...existing, cardSize };
       return { ...f, sections: arr };
     });
   };
@@ -473,6 +483,23 @@ export function CharacterEditSheet({ character, open, onOpenChange, onSaved }: C
                   </div>
                 ) : (
                   <div className="space-y-2">
+                    {/* Card size selector */}
+                    <div className="flex items-center gap-1">
+                      <span className="text-xs text-muted-foreground font-elegant mr-1">Size:</span>
+                      {(['lg', 'md', 'sm'] as const).map((size) => (
+                        <button
+                          key={size}
+                          onClick={() => updateSongsCardSize(idx, size)}
+                          className={`px-2 py-0.5 rounded text-xs font-mono transition-colors ${
+                            (section.cardSize || 'lg') === size
+                              ? 'bg-primary text-background'
+                              : 'text-muted-foreground hover:text-foreground hover:bg-muted/50 border border-border/50'
+                          }`}
+                        >
+                          {size.toUpperCase()}
+                        </button>
+                      ))}
+                    </div>
                     {/* Song list */}
                     {section.songIds.length > 0 && (
                       <div className="flex flex-wrap gap-1">

@@ -22,7 +22,7 @@ export type TextAlign = 'left' | 'right' | 'center' | 'full';
 
 export type CharacterSection =
   | { type: 'text'; content: string; align?: TextAlign; frame?: boolean }
-  | { type: 'songs'; songIds: string[] }
+  | { type: 'songs'; songIds: string[]; cardSize?: CardSize }
   | { type: 'image'; url: string; alt?: string; align?: TextAlign };
 
 export interface Character {
@@ -47,6 +47,7 @@ export interface Playlist {
   updatedAt: string;
 }
 
+export type CardSize = 'lg' | 'md' | 'sm';
 export type ViewMode = 'grid' | 'list';
 export type SortBy = 'newest' | 'oldest' | 'title' | 'artist' | 'duration';
 export type RepeatMode = 'off' | 'all' | 'one';

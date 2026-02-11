@@ -19,11 +19,18 @@ import { SongTableRow } from '@/components/SongTableRow';
 import { useSongs } from '@/hooks/useSongs';
 import { useDebounce } from '@/hooks/useDebounce';
 import { fetchGenres } from '@/lib/api';
+import type { CardSize } from '@/../../shared/types';
 
 type ViewMode = 'grid' | 'list';
 type SortBy = 'newest' | 'oldest' | 'title' | 'artist' | 'duration';
 
 const SONGS_PER_PAGE = 40;
+
+const GRID_CLASSES: Record<CardSize, string> = {
+  lg: 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8',
+  md: 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-5',
+  sm: 'grid-cols-2 sm:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3',
+};
 
 export default function Home() {
   const [activeTab, setActiveTab] = useState<'pinned' | 'all'>('pinned');
@@ -31,6 +38,7 @@ export default function Home() {
   const [selectedGenre, setSelectedGenre] = useState('all');
   const [sortBy, setSortBy] = useState<SortBy>('title');
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
+  const [cardSize, setCardSize] = useState<CardSize>('lg');
   const [page, setPage] = useState(1);
   const [genres, setGenres] = useState<string[]>(['all']);
 
@@ -249,6 +257,26 @@ export default function Home() {
                     <List className="w-4 h-4" strokeWidth={2} />
                   </Button>
                 </div>
+
+                {/* Card size toggle (grid mode only) */}
+                {viewMode === 'grid' && (
+                  <div className="flex items-center border border-border/50 rounded-lg overflow-hidden">
+                    {(['lg', 'md', 'sm'] as const).map((size) => (
+                      <button
+                        key={size}
+                        onClick={() => setCardSize(size)}
+                        aria-label={`カードサイズ ${size.toUpperCase()}`}
+                        className={`px-2 py-1.5 font-mono text-xs transition-colors ${
+                          cardSize === size
+                            ? 'bg-primary text-background'
+                            : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
+                        }`}
+                      >
+                        {size.toUpperCase()}
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -258,15 +286,15 @@ export default function Home() {
       {/* Songs Grid / Table */}
       <section id="songs-section" className="container">
         {isLoading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+          <div className={`grid ${GRID_CLASSES[cardSize]}`}>
             {Array.from({ length: 8 }).map((_, i) => (
               <SongCardSkeleton key={i} />
             ))}
           </div>
         ) : viewMode === 'grid' ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+          <div className={`grid ${GRID_CLASSES[cardSize]}`}>
             {songs.map((song, index) => (
-              <SongCard key={song.id} song={song} index={index} onSongUpdate={patchSong} />
+              <SongCard key={song.id} song={song} index={index} cardSize={cardSize} onSongUpdate={patchSong} />
             ))}
           </div>
         ) : (

@@ -8,18 +8,19 @@ import { useAdmin } from '@/contexts/AdminContext';
 import { updateSong } from '@/lib/api';
 import { formatDuration, formatDate } from '@/lib/utils';
 import { toast } from 'sonner';
-import type { Song } from '@/../../shared/types';
+import type { Song, CardSize } from '@/../../shared/types';
 
 const SONGS_PER_PAGE = 40;
 
 interface SongCardProps {
   song: Song;
   index: number;
+  cardSize?: CardSize;
   onVisibilityChange?: () => void;
   onSongUpdate?: (songId: string, updates: Partial<Song>) => void;
 }
 
-export function SongCard({ song, index, onVisibilityChange, onSongUpdate }: SongCardProps) {
+export function SongCard({ song, index, cardSize = 'lg', onVisibilityChange, onSongUpdate }: SongCardProps) {
   const { currentSong, isPlaying, playSong, togglePlay } = usePlayer();
   const { isAdmin } = useAdmin();
   const isCurrentSong = currentSong?.id === song.id;
@@ -103,12 +104,12 @@ export function SongCard({ song, index, onVisibilityChange, onSongUpdate }: Song
               <Button
                 size="icon"
                 tabIndex={-1}
-                className="w-16 h-16 rounded-full bg-gradient-to-br from-primary via-accent to-primary hover:from-primary hover:via-accent hover:to-primary gold-glow pointer-events-none"
+                className={`rounded-full bg-gradient-to-br from-primary via-accent to-primary hover:from-primary hover:via-accent hover:to-primary gold-glow pointer-events-none ${cardSize === 'sm' ? 'w-10 h-10' : cardSize === 'md' ? 'w-12 h-12' : 'w-16 h-16'}`}
               >
                 {isCurrentSong && isPlaying ? (
-                  <Pause className="w-8 h-8 text-background" strokeWidth={2.5} />
+                  <Pause className={`text-background ${cardSize === 'sm' ? 'w-5 h-5' : cardSize === 'md' ? 'w-6 h-6' : 'w-8 h-8'}`} strokeWidth={2.5} />
                 ) : (
-                  <Play className="w-8 h-8 text-background ml-1" strokeWidth={2.5} />
+                  <Play className={`text-background ml-0.5 ${cardSize === 'sm' ? 'w-5 h-5' : cardSize === 'md' ? 'w-6 h-6' : 'w-8 h-8'}`} strokeWidth={2.5} />
                 )}
               </Button>
             </div>
@@ -166,43 +167,47 @@ export function SongCard({ song, index, onVisibilityChange, onSongUpdate }: Song
           </div>
 
           {/* Info */}
-          <div className="p-5">
+          <div className={cardSize === 'sm' ? 'p-2.5' : cardSize === 'md' ? 'p-3.5' : 'p-5'}>
             {/* Title — click to navigate to detail */}
             <Link href={`/song/${song.id}`}>
-              <h3 className="font-display text-base mb-1 text-foreground truncate hover:text-primary transition-colors cursor-pointer">
+              <h3 className={`font-display mb-1 text-foreground truncate hover:text-primary transition-colors cursor-pointer ${cardSize === 'sm' ? 'text-xs' : cardSize === 'md' ? 'text-sm' : 'text-base'}`}>
                 {song.title}
               </h3>
             </Link>
 
             {/* Artist */}
-            <p className="font-elegant text-sm text-muted-foreground mb-3 truncate">
+            <p className={`font-elegant text-muted-foreground truncate ${cardSize === 'sm' ? 'text-xs mb-1.5' : cardSize === 'md' ? 'text-xs mb-2' : 'text-sm mb-3'}`}>
               {song.artist}
             </p>
 
-            {/* Metadata */}
-            <div className="flex items-center justify-between text-xs mb-3">
-              <div className="flex items-center gap-1 text-muted-foreground">
-                <Clock className="w-3 h-3" />
-                <span className="font-mono">{formatDuration(song.duration)}</span>
-              </div>
+            {/* Metadata — hide on small */}
+            {cardSize !== 'sm' && (
+              <div className={`flex items-center justify-between text-xs ${cardSize === 'md' ? 'mb-2' : 'mb-3'}`}>
+                <div className="flex items-center gap-1 text-muted-foreground">
+                  <Clock className="w-3 h-3" />
+                  <span className="font-mono">{formatDuration(song.duration)}</span>
+                </div>
 
-              <Badge
-                variant="outline"
-                className="font-elegant text-xs border-primary/30 text-primary rounded-full"
-              >
-                {song.genre}
-              </Badge>
-            </div>
-
-            {/* Date */}
-            <div className="pt-3 border-t border-border/50">
-              <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                <Calendar className="w-3 h-3 text-accent" />
-                <span className="font-mono">
-                  {formatDate(song.createdAt)}
-                </span>
+                <Badge
+                  variant="outline"
+                  className="font-elegant text-xs border-primary/30 text-primary rounded-full"
+                >
+                  {song.genre}
+                </Badge>
               </div>
-            </div>
+            )}
+
+            {/* Date — hide on small */}
+            {cardSize !== 'sm' && (
+              <div className={`border-t border-border/50 ${cardSize === 'md' ? 'pt-2' : 'pt-3'}`}>
+                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <Calendar className="w-3 h-3 text-accent" />
+                  <span className="font-mono">
+                    {formatDate(song.createdAt)}
+                  </span>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>
