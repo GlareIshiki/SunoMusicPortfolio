@@ -19,12 +19,14 @@ import { SongTableRow } from '@/components/SongTableRow';
 import { useSongs } from '@/hooks/useSongs';
 import { useDebounce } from '@/hooks/useDebounce';
 import { fetchGenres } from '@/lib/api';
+import { useAdmin } from '@/contexts/AdminContext';
 import type { CardSize } from '@/../../shared/types';
 
 type ViewMode = 'grid' | 'list';
 type SortBy = 'newest' | 'oldest' | 'title' | 'artist' | 'duration';
 
 const SONGS_PER_PAGE = 40;
+const ADMIN_SONGS_PER_PAGE = 500;
 
 const GRID_CLASSES: Record<CardSize, string> = {
   lg: 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8',
@@ -33,6 +35,7 @@ const GRID_CLASSES: Record<CardSize, string> = {
 };
 
 export default function Home() {
+  const { isAdmin } = useAdmin();
   const [activeTab, setActiveTab] = useState<'pinned' | 'all'>('pinned');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedGenre, setSelectedGenre] = useState('all');
@@ -44,9 +47,11 @@ export default function Home() {
 
   const debouncedSearch = useDebounce(searchQuery, 300);
 
+  const songsPerPage = isAdmin ? ADMIN_SONGS_PER_PAGE : SONGS_PER_PAGE;
+
   const { songs, total, totalPages, isLoading, patchSong } = useSongs({
     page,
-    limit: SONGS_PER_PAGE,
+    limit: songsPerPage,
     search: debouncedSearch,
     genre: selectedGenre,
     sort: sortBy,
@@ -310,7 +315,7 @@ export default function Home() {
               </div>
               {/* Rows */}
               {songs.map((song, index) => (
-                <SongTableRow key={song.id} song={song} index={(safePage - 1) * SONGS_PER_PAGE + index} queue={songs} onSongUpdate={patchSong} />
+                <SongTableRow key={song.id} song={song} index={(safePage - 1) * songsPerPage + index} queue={songs} onSongUpdate={patchSong} />
               ))}
             </div>
           </div>
@@ -392,7 +397,7 @@ export default function Home() {
         {!isLoading && totalPages > 1 && (
           <div className="text-center mt-4">
             <span className="font-mono text-xs text-muted-foreground">
-              {(safePage - 1) * SONGS_PER_PAGE + 1}–{Math.min(safePage * SONGS_PER_PAGE, total)} / {total}
+              {(safePage - 1) * songsPerPage + 1}–{Math.min(safePage * songsPerPage, total)} / {total}
             </span>
           </div>
         )}

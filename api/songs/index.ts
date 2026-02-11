@@ -13,7 +13,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     // Parse query params
     const page = Math.max(1, parseInt(req.query.page as string) || 1);
-    const limit = Math.min(100, Math.max(1, parseInt(req.query.limit as string) || 40));
+    const maxLimit = admin ? 500 : 100;
+    const limit = Math.min(maxLimit, Math.max(1, parseInt(req.query.limit as string) || 40));
     const search = ((req.query.search as string) || '').trim();
     const genre = ((req.query.genre as string) || '').trim();
     const sort = (req.query.sort as string) || 'newest';
