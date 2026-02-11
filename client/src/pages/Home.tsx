@@ -1,7 +1,8 @@
 /* Design Philosophy: Grand Harmonic Archive - mystical grand library layout */
 
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
+import { useVirtualizer } from '@tanstack/react-virtual';
 import { Search, Grid3x3, List, Sparkles, Clock, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Pin } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
@@ -18,6 +19,7 @@ import { SongCardSkeleton } from '@/components/SongCardSkeleton';
 import { SongTableRow } from '@/components/SongTableRow';
 import { useSongs } from '@/hooks/useSongs';
 import { useDebounce } from '@/hooks/useDebounce';
+import { useColumnCount } from '@/hooks/useColumnCount';
 import { fetchGenres } from '@/lib/api';
 import { useAdmin } from '@/contexts/AdminContext';
 import type { CardSize } from '@/../../shared/types';
@@ -34,6 +36,15 @@ const GRID_CLASSES: Record<CardSize, string> = {
   sm: 'grid-cols-2 sm:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3',
 };
 
+// Estimated row heights per card size (card height + gap)
+const ROW_HEIGHT: Record<CardSize, number> = {
+  lg: 420,
+  md: 300,
+  sm: 220,
+};
+
+const LIST_ROW_HEIGHT = 56;
+
 export default function Home() {
   const { isAdmin } = useAdmin();
   const [activeTab, setActiveTab] = useState<'pinned' | 'all'>('pinned');
@@ -46,6 +57,8 @@ export default function Home() {
   const [genres, setGenres] = useState<string[]>(['all']);
 
   const debouncedSearch = useDebounce(searchQuery, 300);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const columnCount = useColumnCount(cardSize);
 
   const songsPerPage = isAdmin ? ADMIN_SONGS_PER_PAGE : SONGS_PER_PAGE;
 
@@ -57,6 +70,27 @@ export default function Home() {
     sort: sortBy,
     pinned: activeTab === 'pinned' ? true : undefined,
   });
+
+  // Virtual scrolling
+  const gridRowCount = Math.ceil(songs.length / columnCount);
+  const gridVirtualizer = useVirtualizer({
+    count: gridRowCount,
+    getScrollElement: () => scrollRef.current,
+    estimateSize: () => ROW_HEIGHT[cardSize],
+    overscan: 3,
+  });
+
+  const listVirtualizer = useVirtualizer({
+    count: songs.length,
+    getScrollElement: () => scrollRef.current,
+    estimateSize: () => LIST_ROW_HEIGHT,
+    overscan: 15,
+  });
+
+  // Reset virtualizer scroll when data changes
+  useEffect(() => {
+    scrollRef.current?.scrollTo(0, 0);
+  }, [page, debouncedSearch, selectedGenre, sortBy, activeTab]);
 
   // Load genres on mount
   useEffect(() => {
@@ -296,30 +330,96 @@ export default function Home() {
               <SongCardSkeleton key={i} />
             ))}
           </div>
-        ) : viewMode === 'grid' ? (
-          <div className={`grid ${GRID_CLASSES[cardSize]}`}>
-            {songs.map((song, index) => (
-              <SongCard key={song.id} song={song} index={index} cardSize={cardSize} onSongUpdate={patchSong} />
-            ))}
-          </div>
-        ) : (
-          <div className="ornate-card elegant-shadow">
-            <div className="ornate-card-inner p-2 md:p-4">
-              {/* Table Header */}
-              <div className="grid grid-cols-[2.5rem_1fr_3rem] md:grid-cols-[2.5rem_2fr_1fr_1fr_3.5rem] gap-3 items-center px-4 py-2 border-b border-border/50 mb-1" role="row">
-                <span role="columnheader" className="font-mono text-xs text-muted-foreground text-center">#</span>
-                <span role="columnheader" className="font-display text-xs text-muted-foreground tracking-wider">タイトル</span>
-                <span role="columnheader" className="font-display text-xs text-muted-foreground tracking-wider hidden md:block">ジャンル</span>
-                <span role="columnheader" className="font-display text-xs text-muted-foreground tracking-wider hidden md:block">追加日</span>
-                <Clock className="w-4 h-4 text-muted-foreground ml-auto" aria-label="再生時間" />
+        ) : songs.length > 0 ? (
+          <div
+            ref={scrollRef}
+            className="overflow-auto"
+            style={{ height: 'calc(100vh - 120px)' }}
+          >
+            {viewMode === 'grid' ? (
+              <div
+                style={{
+                  height: gridVirtualizer.getTotalSize(),
+                  position: 'relative',
+                  width: '100%',
+                }}
+              >
+                {gridVirtualizer.getVirtualItems().map((virtualRow) => {
+                  const startIndex = virtualRow.index * columnCount;
+                  const rowSongs = songs.slice(startIndex, startIndex + columnCount);
+                  return (
+                    <div
+                      key={virtualRow.key}
+                      style={{
+                        position: 'absolute',
+                        top: 0,
+                        left: 0,
+                        width: '100%',
+                        transform: `translateY(${virtualRow.start}px)`,
+                      }}
+                    >
+                      <div className={`grid ${GRID_CLASSES[cardSize]}`}>
+                        {rowSongs.map((song, colIndex) => (
+                          <SongCard
+                            key={song.id}
+                            song={song}
+                            index={startIndex + colIndex}
+                            cardSize={cardSize}
+                            onSongUpdate={patchSong}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
-              {/* Rows */}
-              {songs.map((song, index) => (
-                <SongTableRow key={song.id} song={song} index={(safePage - 1) * songsPerPage + index} queue={songs} onSongUpdate={patchSong} />
-              ))}
-            </div>
+            ) : (
+              <div className="ornate-card elegant-shadow">
+                <div className="ornate-card-inner p-2 md:p-4">
+                  {/* Table Header */}
+                  <div className="grid grid-cols-[2.5rem_1fr_3rem] md:grid-cols-[2.5rem_2fr_1fr_1fr_3.5rem] gap-3 items-center px-4 py-2 border-b border-border/50 mb-1" role="row">
+                    <span role="columnheader" className="font-mono text-xs text-muted-foreground text-center">#</span>
+                    <span role="columnheader" className="font-display text-xs text-muted-foreground tracking-wider">タイトル</span>
+                    <span role="columnheader" className="font-display text-xs text-muted-foreground tracking-wider hidden md:block">ジャンル</span>
+                    <span role="columnheader" className="font-display text-xs text-muted-foreground tracking-wider hidden md:block">追加日</span>
+                    <Clock className="w-4 h-4 text-muted-foreground ml-auto" aria-label="再生時間" />
+                  </div>
+                  {/* Virtual Rows */}
+                  <div
+                    style={{
+                      height: listVirtualizer.getTotalSize(),
+                      position: 'relative',
+                      width: '100%',
+                    }}
+                  >
+                    {listVirtualizer.getVirtualItems().map((virtualRow) => {
+                      const song = songs[virtualRow.index];
+                      return (
+                        <div
+                          key={virtualRow.key}
+                          style={{
+                            position: 'absolute',
+                            top: 0,
+                            left: 0,
+                            width: '100%',
+                            transform: `translateY(${virtualRow.start}px)`,
+                          }}
+                        >
+                          <SongTableRow
+                            song={song}
+                            index={(safePage - 1) * songsPerPage + virtualRow.index}
+                            queue={songs}
+                            onSongUpdate={patchSong}
+                          />
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
-        )}
+        ) : null}
 
         {/* Pagination */}
         {!isLoading && totalPages > 1 && (
