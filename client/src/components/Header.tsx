@@ -2,7 +2,7 @@
 
 import { Link, useLocation } from 'wouter';
 import { motion } from 'framer-motion';
-import { Music2, Home, ListMusic, BookOpen, Moon, Sun, KeyRound, LogOut } from 'lucide-react';
+import { Music2, Home, ListMusic, BookOpen, Moon, Sun, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useAdmin } from '@/contexts/AdminContext';
@@ -12,7 +12,7 @@ import { toast } from 'sonner';
 export function Header() {
   const [location] = useLocation();
   const { theme, toggleTheme } = useTheme();
-  const { isAdmin, logout, setShowLoginDialog } = useAdmin();
+  const { isAdmin, logout } = useAdmin();
   
   const navItems = [
     { href: '/', label: 'Archive', icon: Home },
@@ -96,8 +96,8 @@ export function Header() {
               )}
             </Button>
 
-            {/* Admin Toggle */}
-            {isAdmin ? (
+            {/* Admin Logout (only visible when logged in) */}
+            {isAdmin && (
               <Button
                 variant="ghost"
                 size="icon"
@@ -108,17 +108,7 @@ export function Header() {
                 aria-label="管理者モード終了"
                 className="rounded-full animate-glow-pulse"
               >
-                <KeyRound className="w-5 h-5 text-primary" strokeWidth={2} />
-              </Button>
-            ) : (
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => setShowLoginDialog(true)}
-                aria-label="管理者ログイン"
-                className="rounded-full opacity-30 hover:opacity-100 transition-opacity"
-              >
-                <KeyRound className="w-5 h-5 text-muted-foreground" strokeWidth={2} />
+                <LogOut className="w-5 h-5 text-primary" strokeWidth={2} />
               </Button>
             )}
           </nav>

@@ -30,20 +30,18 @@ export function AdminProvider({ children }: { children: ReactNode }) {
       .finally(() => setIsLoading(false));
   }, []);
 
-  // Keyboard shortcut: Ctrl+Shift+A
+  // Secret URL: /#admin opens login dialog
   useEffect(() => {
-    const handler = (e: KeyboardEvent) => {
-      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'A') {
-        e.preventDefault();
-        if (isAdmin) {
-          logout();
-        } else {
-          setShowLoginDialog(true);
-        }
+    const checkHash = () => {
+      if (window.location.hash === '#admin' && !isAdmin) {
+        setShowLoginDialog(true);
+        // Clear hash without triggering navigation
+        history.replaceState(null, '', window.location.pathname + window.location.search);
       }
     };
-    window.addEventListener('keydown', handler);
-    return () => window.removeEventListener('keydown', handler);
+    checkHash();
+    window.addEventListener('hashchange', checkHash);
+    return () => window.removeEventListener('hashchange', checkHash);
   }, [isAdmin]);
 
   const login = useCallback(async (password: string): Promise<boolean> => {
