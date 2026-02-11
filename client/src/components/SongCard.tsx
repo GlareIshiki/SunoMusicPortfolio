@@ -64,9 +64,13 @@ export function SongCard({ song, index, cardSize = 'lg', onVisibilityChange, onS
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
+      initial={{ opacity: 0, y: 30 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3 }}
+      transition={{
+        duration: 0.6,
+        delay: Math.min((index % 40) * 0.05, 0.5),
+        ease: [0.25, 0.46, 0.45, 0.94],
+      }}
       whileHover={{ y: -8, scale: 1.02 }}
     >
       <div className={`ornate-card elegant-shadow transition-all duration-500 hover:gold-glow group cursor-pointer ${isAdmin && !song.visible ? 'opacity-50 grayscale-[50%]' : ''}`}>
