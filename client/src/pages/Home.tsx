@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
-import { useVirtualizer } from '@tanstack/react-virtual';
+import { useWindowVirtualizer } from '@tanstack/react-virtual';
 import { Search, Grid3x3, List, Sparkles, Clock, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Pin } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
@@ -57,7 +57,7 @@ export default function Home() {
   const [genres, setGenres] = useState<string[]>(['all']);
 
   const debouncedSearch = useDebounce(searchQuery, 300);
-  const scrollRef = useRef<HTMLDivElement>(null);
+  const gridListRef = useRef<HTMLDivElement>(null);
   const columnCount = useColumnCount(cardSize);
 
   const songsPerPage = isAdmin ? ADMIN_SONGS_PER_PAGE : SONGS_PER_PAGE;
@@ -71,26 +71,21 @@ export default function Home() {
     pinned: activeTab === 'pinned' ? true : undefined,
   });
 
-  // Virtual scrolling
+  // Window-based virtual scrolling (natural page scroll)
   const gridRowCount = Math.ceil(songs.length / columnCount);
-  const gridVirtualizer = useVirtualizer({
+  const gridVirtualizer = useWindowVirtualizer({
     count: gridRowCount,
-    getScrollElement: () => scrollRef.current,
     estimateSize: () => ROW_HEIGHT[cardSize],
     overscan: 3,
+    scrollMargin: gridListRef.current?.offsetTop ?? 0,
   });
 
-  const listVirtualizer = useVirtualizer({
+  const listVirtualizer = useWindowVirtualizer({
     count: songs.length,
-    getScrollElement: () => scrollRef.current,
     estimateSize: () => LIST_ROW_HEIGHT,
     overscan: 15,
+    scrollMargin: gridListRef.current?.offsetTop ?? 0,
   });
-
-  // Reset virtualizer scroll when data changes
-  useEffect(() => {
-    scrollRef.current?.scrollTo(0, 0);
-  }, [page, debouncedSearch, selectedGenre, sortBy, activeTab]);
 
   // Load genres on mount
   useEffect(() => {
@@ -323,30 +318,71 @@ export default function Home() {
       </section>
 
       {/* Songs Grid / Table */}
-      <section id="songs-section" className="container">
+      <section id="songs-section" className="container" ref={gridListRef}>
         {isLoading ? (
           <div className={`grid ${GRID_CLASSES[cardSize]}`}>
             {Array.from({ length: 8 }).map((_, i) => (
               <SongCardSkeleton key={i} />
             ))}
           </div>
-        ) : songs.length > 0 ? (
+        ) : songs.length > 0 && viewMode === 'grid' ? (
           <div
-            ref={scrollRef}
-            className="overflow-auto"
-            style={{ height: 'calc(100vh - 120px)' }}
+            style={{
+              height: gridVirtualizer.getTotalSize(),
+              position: 'relative',
+              width: '100%',
+            }}
           >
-            {viewMode === 'grid' ? (
+            {gridVirtualizer.getVirtualItems().map((virtualRow) => {
+              const startIndex = virtualRow.index * columnCount;
+              const rowSongs = songs.slice(startIndex, startIndex + columnCount);
+              return (
+                <div
+                  key={virtualRow.key}
+                  style={{
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    width: '100%',
+                    transform: `translateY(${virtualRow.start - gridVirtualizer.options.scrollMargin}px)`,
+                  }}
+                >
+                  <div className={`grid ${GRID_CLASSES[cardSize]}`}>
+                    {rowSongs.map((song, colIndex) => (
+                      <SongCard
+                        key={song.id}
+                        song={song}
+                        index={startIndex + colIndex}
+                        cardSize={cardSize}
+                        onSongUpdate={patchSong}
+                      />
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        ) : songs.length > 0 && viewMode === 'list' ? (
+          <div className="ornate-card elegant-shadow">
+            <div className="ornate-card-inner p-2 md:p-4">
+              {/* Table Header */}
+              <div className="grid grid-cols-[2.5rem_1fr_3rem] md:grid-cols-[2.5rem_2fr_1fr_1fr_3.5rem] gap-3 items-center px-4 py-2 border-b border-border/50 mb-1" role="row">
+                <span role="columnheader" className="font-mono text-xs text-muted-foreground text-center">#</span>
+                <span role="columnheader" className="font-display text-xs text-muted-foreground tracking-wider">タイトル</span>
+                <span role="columnheader" className="font-display text-xs text-muted-foreground tracking-wider hidden md:block">ジャンル</span>
+                <span role="columnheader" className="font-display text-xs text-muted-foreground tracking-wider hidden md:block">追加日</span>
+                <Clock className="w-4 h-4 text-muted-foreground ml-auto" aria-label="再生時間" />
+              </div>
+              {/* Virtual Rows */}
               <div
                 style={{
-                  height: gridVirtualizer.getTotalSize(),
+                  height: listVirtualizer.getTotalSize(),
                   position: 'relative',
                   width: '100%',
                 }}
               >
-                {gridVirtualizer.getVirtualItems().map((virtualRow) => {
-                  const startIndex = virtualRow.index * columnCount;
-                  const rowSongs = songs.slice(startIndex, startIndex + columnCount);
+                {listVirtualizer.getVirtualItems().map((virtualRow) => {
+                  const song = songs[virtualRow.index];
                   return (
                     <div
                       key={virtualRow.key}
@@ -355,69 +391,20 @@ export default function Home() {
                         top: 0,
                         left: 0,
                         width: '100%',
-                        transform: `translateY(${virtualRow.start}px)`,
+                        transform: `translateY(${virtualRow.start - listVirtualizer.options.scrollMargin}px)`,
                       }}
                     >
-                      <div className={`grid ${GRID_CLASSES[cardSize]}`}>
-                        {rowSongs.map((song, colIndex) => (
-                          <SongCard
-                            key={song.id}
-                            song={song}
-                            index={startIndex + colIndex}
-                            cardSize={cardSize}
-                            onSongUpdate={patchSong}
-                          />
-                        ))}
-                      </div>
+                      <SongTableRow
+                        song={song}
+                        index={(safePage - 1) * songsPerPage + virtualRow.index}
+                        queue={songs}
+                        onSongUpdate={patchSong}
+                      />
                     </div>
                   );
                 })}
               </div>
-            ) : (
-              <div className="ornate-card elegant-shadow">
-                <div className="ornate-card-inner p-2 md:p-4">
-                  {/* Table Header */}
-                  <div className="grid grid-cols-[2.5rem_1fr_3rem] md:grid-cols-[2.5rem_2fr_1fr_1fr_3.5rem] gap-3 items-center px-4 py-2 border-b border-border/50 mb-1" role="row">
-                    <span role="columnheader" className="font-mono text-xs text-muted-foreground text-center">#</span>
-                    <span role="columnheader" className="font-display text-xs text-muted-foreground tracking-wider">タイトル</span>
-                    <span role="columnheader" className="font-display text-xs text-muted-foreground tracking-wider hidden md:block">ジャンル</span>
-                    <span role="columnheader" className="font-display text-xs text-muted-foreground tracking-wider hidden md:block">追加日</span>
-                    <Clock className="w-4 h-4 text-muted-foreground ml-auto" aria-label="再生時間" />
-                  </div>
-                  {/* Virtual Rows */}
-                  <div
-                    style={{
-                      height: listVirtualizer.getTotalSize(),
-                      position: 'relative',
-                      width: '100%',
-                    }}
-                  >
-                    {listVirtualizer.getVirtualItems().map((virtualRow) => {
-                      const song = songs[virtualRow.index];
-                      return (
-                        <div
-                          key={virtualRow.key}
-                          style={{
-                            position: 'absolute',
-                            top: 0,
-                            left: 0,
-                            width: '100%',
-                            transform: `translateY(${virtualRow.start}px)`,
-                          }}
-                        >
-                          <SongTableRow
-                            song={song}
-                            index={(safePage - 1) * songsPerPage + virtualRow.index}
-                            queue={songs}
-                            onSongUpdate={patchSong}
-                          />
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              </div>
-            )}
+            </div>
           </div>
         ) : null}
 
