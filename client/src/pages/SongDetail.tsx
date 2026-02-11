@@ -221,7 +221,7 @@ export default function SongDetail() {
                 <CardHeader>
                   <CardTitle className="font-display flex items-center gap-3">
                     <Tag className="w-5 h-5 text-primary" strokeWidth={2} />
-                    Classification Tags
+                    Style Prompt
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
